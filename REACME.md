@@ -1,5 +1,5 @@
-COSC360 Selecter long project
+COSC360 semester long project
 
-Online multiplayer Backgammon
+Online multiplayer backgammon
 
 
