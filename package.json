@@ -1,0 +1,25 @@
+{
+  "name": "cosc360-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.une.edu.au:ezoerner/cosc360-project.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "css-loader": "^3.1.0",
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.5.3",
+    "webpack": "^4.38.0"
+  },
+  "dependencies": {
+    "webpack-cli": "^3.3.6"
+  }
+}
