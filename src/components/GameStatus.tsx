@@ -9,18 +9,29 @@ const Container = styled.div`
 
 interface Props {
   dice: number[],
+  movesLeft: number[],
   myTurn: boolean
 }
 
-const GameStatus: React.FunctionComponent<Props> = ({dice, myTurn}: Props) => {
+const GameStatus: React.FunctionComponent<Props> = ({
+  dice,
+  movesLeft,
+  myTurn
+}: Props) => {
   return (
     <Container>
       <p>{myTurn ? "Your Turn" : "Opponent's Turn"}</p>
-      {dice && (
-        <p>
-          Dice: {dice[0]} & {dice[1]}
-        </p>
+      {dice[0] !== -1 && (
+        <>
+          <p>
+            Dice: {dice[0]} & {dice[1]}
+          </p>
+          <p>
+            Moves left: {movesLeft.map(m => `${m}, `)}
+          </p>
+        </>
       )}
+
     </Container>
   );
 }
