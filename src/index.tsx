@@ -1,15 +1,13 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { ThemeProvider } from 'styled-components'
+
+import { theme } from './theme'
+import Game from './components/Game';
 
 ReactDOM.render(
-  <div>Hello React</div>,
+  <ThemeProvider theme={theme}>
+    <Game />
+  </ThemeProvider>,
   document.getElementById("app")
 );
-
-
-const myBtn:HTMLElement | null = document.getElementById("my-btn")
-if (myBtn) {
-  myBtn.addEventListener("click", e => {
-    console.log("click!");
-  });
-}
