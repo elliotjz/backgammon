@@ -30,16 +30,16 @@ const Button = styled.button`
 `;
 
 interface Props {
-  rollDice(): void,
+  handleDiceClick(): void,
   disabled: boolean
 }
 
 const RollDiceBtn:React.FunctionComponent<Props> = ({
-  rollDice,
+  handleDiceClick,
   disabled
 }: Props) => {
   return (
-    <Button type="button" disabled={disabled} onClick={rollDice}>
+    <Button type="button" disabled={disabled} onClick={handleDiceClick}>
       Roll Dice
     </Button>
   );

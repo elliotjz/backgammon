@@ -1,0 +1,4 @@
+const PLAYER0_HOME = 24;
+const PLAYER1_HOME = -1;
+
+export { PLAYER0_HOME, PLAYER1_HOME }

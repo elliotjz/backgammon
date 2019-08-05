@@ -4,15 +4,21 @@ import styled from "styled-components";
 import Board from "./Board";
 import GameStatus from "./GameStatus";
 import RollDiceBtn from "./RollDiceBtn";
-import { allPiecesAreInFinalQuad, getDiceNumbers } from '../helpers'
+import {
+  allPiecesAreInFinalQuad,
+  getDiceNumbers,
+  capturesOpponent,
+  spikeIsAvailable,
+  playerCanMove
+} from '../helpers/functions'
+import { capturedTest } from '../helpers/testPiceArrays'
+import { PLAYER0_HOME, PLAYER1_HOME } from '../helpers/constants'
 
 const Container = styled.div`
   display: flex;
   justify-content: center;
   flex-direction: column;
 `;
-
-
 
 interface PropsI {
 
@@ -34,10 +40,10 @@ class Game extends React.Component<PropsI, StateI> {
     needsToRoll: true,
     dice: [-1, -1],
     movesLeft: [-1],
-    pieces: [[0, 0, 11, 11, 11, 11, 11, 16, 16, 16, 18, 18, 18, 18, 18],
-              [5, 5, 5, 5, 5, 7, 7, 7, 12, 12, 12, 12, 12, 23, 23]],
+    pieces: capturedTest,
     highlightedPiece: [-1, -1],
-    highlightedSpikes: []
+    highlightedSpikes: [],
+    message: ""
   };
 
   handlePieceClick = (player:number, pieceI:number) => {
@@ -45,12 +51,17 @@ class Game extends React.Component<PropsI, StateI> {
     const isMyChip = player === 0;
     const spikeNumber = pieces[0][pieceI];
     if (myTurn && !needsToRoll && isMyChip) {
-      const highlightedSpikes = movesLeft
-        .filter((val, i, self) => self.indexOf(val) === i)
-        .map(n => spikeNumber + n)
+      const spikes = movesLeft.map(n => spikeNumber + n);
+      const validSpikes = spikes.filter((spikeNum, i, self) => {
+        // remove duplicates
+        if (self.indexOf(spikeNum) !== i) return false;
+        // Remove blocked spikes
+        return spikeIsAvailable(pieces, player, spikeNum);
+      });
+      
       this.setState({
         highlightedPiece: [0, pieceI],
-        highlightedSpikes,
+        highlightedSpikes: validSpikes,
       });
     }
   };
@@ -70,6 +81,12 @@ class Game extends React.Component<PropsI, StateI> {
     // Move the piece
     pieces[player][i] = toSpike;
 
+    // Check if a piece has been captured
+    if (capturesOpponent(pieces, player, toSpike)) {
+      const indexOfPiece = pieces[1 - player].indexOf(toSpike);
+      pieces[1 - player][indexOfPiece] = player === 1 ? PLAYER1_HOME : PLAYER0_HOME;
+    }
+
     // Update moves left
     movesLeft.splice(indexOfMove, 1);
 
@@ -81,8 +98,12 @@ class Game extends React.Component<PropsI, StateI> {
         highlightedPiece: [-1, -1],
         highlightedSpikes: []
       }, () => {
-        // Computer makes another move
-        if (!myTurn) this.computerMove();
+        if (myTurn) {
+          this.playersMove();
+        } else {
+          // Computer makes another move
+          this.computerMove();
+        }
       });
     } else {
       // No more moves. Change turn
@@ -100,7 +121,6 @@ class Game extends React.Component<PropsI, StateI> {
         }, () => {
           this.computerMove();
         })
-
       } else {
         // It's now my turn
         this.setState({
@@ -116,22 +136,73 @@ class Game extends React.Component<PropsI, StateI> {
     }
   };
 
-  rollDice = () => {
+  handleDiceClick = () => {
     const { dice, movesLeft } = getDiceNumbers();
     this.setState({
       dice,
       movesLeft,
       needsToRoll: false
+    }, () => {
+      this.playersMove();
     });
   };
 
   computerMove = () => {
     setTimeout(() => {
       const { pieces, movesLeft } = this.state
-      const lastPiecePosition = Math.max(...pieces[1])
-      const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
-      this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[0])
-    }, 1000)
+      if (!playerCanMove(pieces, 1, movesLeft)) {
+        console.log("Computer can't move");
+      } else {
+        let sortedPieces = [...pieces[1]];
+        sortedPieces.sort((a, b) => b - a);
+        let lastPiecePosition = sortedPieces[0];
+        if (lastPiecePosition === 24) {
+          // Piece is trapped. Comp can only move the trapped pieces
+          if (spikeIsAvailable(pieces, 1, lastPiecePosition - movesLeft[0])) {
+            const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
+            this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[0]);
+          } else {
+            const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
+            this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[1]);
+          }
+        } else {
+          // No trapped pieces. Comp can move anything
+          let i = 1;
+          while (!spikeIsAvailable(pieces, 1, lastPiecePosition - movesLeft[0])
+            && i < sortedPieces.length) {
+            lastPiecePosition = sortedPieces[i];
+            i += 1;
+          }
+          if (i === pieces[0].length) {
+            console.log("Out of luck! No moves can be made!");
+          } else {
+            const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
+            this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[0])
+          }
+        }
+      }
+    }, 2000);
+  }
+
+  playersMove = () => {
+    const { pieces, movesLeft } = this.state;
+    if (!playerCanMove(pieces, 0, movesLeft)) {
+      console.log("Player Can't move.");
+    }
+  }
+
+  componentDidMount() {
+    const { dice, movesLeft } = getDiceNumbers();
+    this.setState({
+      myTurn: false,
+      needsToRoll: false,
+      dice,
+      movesLeft,
+      highlightedPiece: [-1, -1],
+      highlightedSpikes: []
+    }, () => {
+      this.computerMove();
+    })
   }
 
   render() {
@@ -152,8 +223,9 @@ class Game extends React.Component<PropsI, StateI> {
           handleSpikeClick={this.handleSpikeClick}
           highlightedPiece={highlightedPiece}
           highlightedSpikes={highlightedSpikes}
+          movesLeft={movesLeft}
         />
-        <RollDiceBtn rollDice={this.rollDice} disabled={!needsToRoll} />
+        <RollDiceBtn handleDiceClick={this.handleDiceClick} disabled={!needsToRoll} />
         <GameStatus dice={dice} myTurn={myTurn} movesLeft={movesLeft} />
       </Container>
     );

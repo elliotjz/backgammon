@@ -11,13 +11,15 @@ const SVGBoard = styled.svg`
 import BoardBackground from "./BoardBackground";
 import HighlightedSpikes from "./HighlightedSpikes";
 import Pieces from "./Pieces";
+import AllDice from "./AllDice";
 
 interface Props {
   pieces: number[][],
   handlePieceClick(player:number, pieceI:number): void,
   handleSpikeClick(spikeNum: number): void,
   highlightedPiece: number[],
-  highlightedSpikes: number[]
+  highlightedSpikes: number[],
+  movesLeft: number[]
 }
 
 const Board:React.FunctionComponent<Props> = ({
@@ -25,7 +27,8 @@ const Board:React.FunctionComponent<Props> = ({
   handlePieceClick,
   handleSpikeClick,
   highlightedPiece,
-  highlightedSpikes
+  highlightedSpikes,
+  movesLeft
 }: Props ) => (
   <SVGBoard>
     <BoardBackground />
@@ -38,6 +41,7 @@ const Board:React.FunctionComponent<Props> = ({
       handlePieceClick={handlePieceClick}
       highlightedPiece={highlightedPiece}
     />
+    <AllDice movesLeft={movesLeft}/>
   </SVGBoard>
 )
 
