@@ -6,7 +6,27 @@ const G = styled.g`
   -webkit-transition: all 0.8s ease-in-out;
   -moz-transition: all 0.8s ease-in-out;
   border: black solid 3px;
+
+  .greenInner {
+    fill: ${props => props.theme.colors.greenPiece1}
+  }
+
+  .greenOuter {
+    fill: ${props => props.theme.colors.greenPiece2}
+  }
+
+  .redInner {
+    fill: ${props => props.theme.colors.redPiece1}
+  }
+
+  .redOuter {
+    fill: ${props => props.theme.colors.redPiece2}
+  }
 `;
+
+const Highlight = styled.circle`
+  fill: ${props => `${props.theme.colors.highlight}88`};
+`
 
 interface Props {
   onClick(): void,
@@ -22,14 +42,14 @@ const Piece: React.FunctionComponent<Props> = ({
   y,
   highlighted
 }: Props) => {
-  const fill1 = player === 1 ? "#7a110a" : "#09660c";
-  const fill2 = player === 1 ? "#9c170e" : "#0c8210";
+  const class1 = player === 1 ? "redInner" : "greenInner";
+  const class2 = player === 1 ? "redOuter" : "greenOuter";
   return (
     <G transform={`translate(${x},${y})`} onClick={onClick}>
-      <circle dx="0" dy="0" r="20" style={{ fill: fill1 }} />
-      <circle dx="0" dy="0" r="16" style={{ fill: fill2 }} />
+      <circle dx="0" dy="0" r="20" className={class1} />
+      <circle dx="0" dy="0" r="16" className={class2} />
       {highlighted && (
-        <circle dx="0" dy="0" r="25" style={{ fill: "#f6ff4daa" }} />
+        <Highlight dx="0" dy="0" r="25" />
       )}
     </G>
   );

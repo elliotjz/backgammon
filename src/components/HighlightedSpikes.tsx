@@ -1,4 +1,13 @@
 import * as React from "react";
+import styled from "styled-components";
+
+const SpikeInner = styled.polygon`
+  fill: ${props => props.theme.colors.highlight};
+`
+
+const SpikeOuter = styled.polygon`
+  fill: ${props => `${props.theme.colors.highlight}33`};
+`
 
 interface Props {
   highlightedSpikes: number[],
@@ -35,12 +44,10 @@ const HighlightedSpikes:React.FunctionComponent<Props> = ({
             transform={`translate(${spikeX}, 0)`}
             onClick={() => onClick(spikeNum)}
           >
-            <polygon
-              style={{ fill: "#f6ff4d" }}
+            <SpikeInner
               points={`0,${baseY} 40,${baseY} 20,${tipY}`}
             />
-            <polygon
-              style={{ fill: "#f6ff4d33" }}
+            <SpikeOuter
               points={`-5,${baseY} 45,${baseY} 20,${shadowTipY}`}
             />
           </g>

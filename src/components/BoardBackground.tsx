@@ -2,21 +2,21 @@ import * as React from "react";
 import styled from 'styled-components'
 
 const GameArea = styled.g`
-  fill: #4a3701;
+  fill: ${props => props.theme.colors.darkBrown};
 `
 
 const BoardSide = styled.g`
-  fill: #614801;
+  fill: ${props => props.theme.colors.lightBrown};
 `
 
 const BlackSpike = styled.g`
-  fill: black;
-  stroke: black;
+  fill: ${props => props.theme.colors.black};
+  stroke: ${props => props.theme.colors.black};;
 `
 
 const WhiteSpike = styled.g`
-  fill: white;
-  stroke: white;
+  fill: ${props => props.theme.colors.white};;
+  stroke: ${props => props.theme.colors.white};;
 `
 
 const BoardBackground = () => {

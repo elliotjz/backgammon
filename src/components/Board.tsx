@@ -12,6 +12,7 @@ import BoardBackground from "./BoardBackground";
 import HighlightedSpikes from "./HighlightedSpikes";
 import Pieces from "./Pieces";
 import AllDice from "./AllDice";
+import HighlightedHomes from "./HighlightedHomes";
 
 interface Props {
   pieces: number[][],
@@ -19,6 +20,8 @@ interface Props {
   handleSpikeClick(spikeNum: number): void,
   highlightedPiece: number[],
   highlightedSpikes: number[],
+  highlightedHome0: boolean,
+  highlightedHome1: boolean,
   movesLeft: number[]
 }
 
@@ -28,6 +31,8 @@ const Board:React.FunctionComponent<Props> = ({
   handleSpikeClick,
   highlightedPiece,
   highlightedSpikes,
+  highlightedHome0,
+  highlightedHome1,
   movesLeft
 }: Props ) => (
   <SVGBoard>
@@ -42,6 +47,11 @@ const Board:React.FunctionComponent<Props> = ({
       highlightedPiece={highlightedPiece}
     />
     <AllDice movesLeft={movesLeft}/>
+    <HighlightedHomes
+      highlightedHome0={highlightedHome0}
+      highlightedHome1={highlightedHome1}
+      onClick={handleSpikeClick}
+    />
   </SVGBoard>
 )
 

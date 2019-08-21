@@ -10,6 +10,11 @@ interface DiceNumbersI {
   movesLeft: number[]
 }
 
+interface MoveOption {
+  piece: number,
+  toSpike: number,
+}
+
 const getDiceNumbers = ():DiceNumbersI => {
   const getDiceNum = () => {
     return Math.ceil(Math.random() * 6);
@@ -53,6 +58,13 @@ const spikeIsAvailable = (pieces:number[][], player:number, spikeNum:number):boo
   return opp < 2;
 }
 
+/*
+ * Returns an array of valid moves.
+ */
+const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): MoveOption => (
+  { piece: 0, toSpike: 0 }
+)
+
 const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boolean => {
   let piecesAvailableToMove:number[] = [];
   const capturedIndex = player === 1 ? PLAYER0_HOME : PLAYER1_HOME;
@@ -72,8 +84,15 @@ const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boo
       }
     })
   })
-  console.log(canMove);
   return canMove;
 }
 
-export { allPiecesAreInFinalQuad, getDiceNumbers, opponentsOnSpike, capturesOpponent, spikeIsAvailable, playerCanMove }
+export {
+  allPiecesAreInFinalQuad,
+  getDiceNumbers,
+  opponentsOnSpike,
+  capturesOpponent,
+  spikeIsAvailable,
+  getValidMoves,
+  playerCanMove
+}

@@ -11,7 +11,7 @@ import {
   spikeIsAvailable,
   playerCanMove
 } from '../helpers/functions'
-import { capturedTest } from '../helpers/testPiceArrays'
+import { capturedTest, allInEndQuad } from '../helpers/testPiceArrays'
 import { PLAYER0_HOME, PLAYER1_HOME } from '../helpers/constants'
 
 const Container = styled.div`
@@ -31,7 +31,10 @@ interface StateI {
   movesLeft: number[],
   pieces: number[][],
   highlightedPiece: number[],
-  highlightedSpikes: number[]
+  highlightedSpikes: number[],
+  highlightedHome0: boolean,
+  highlightedHome1: boolean,
+  message: string,
 }
 
 class Game extends React.Component<PropsI, StateI> {
@@ -40,10 +43,12 @@ class Game extends React.Component<PropsI, StateI> {
     needsToRoll: true,
     dice: [-1, -1],
     movesLeft: [-1],
-    pieces: capturedTest,
+    pieces: allInEndQuad,
     highlightedPiece: [-1, -1],
     highlightedSpikes: [],
-    message: ""
+    highlightedHome0: false,
+    highlightedHome1: false,
+    message: "",
   };
 
   handlePieceClick = (player:number, pieceI:number) => {
@@ -51,6 +56,7 @@ class Game extends React.Component<PropsI, StateI> {
     const isMyChip = player === 0;
     const spikeNumber = pieces[0][pieceI];
     if (myTurn && !needsToRoll && isMyChip) {
+      // Highlight the spikes that the player can move to
       const spikes = movesLeft.map(n => spikeNumber + n);
       const validSpikes = spikes.filter((spikeNum, i, self) => {
         // remove duplicates
@@ -58,16 +64,26 @@ class Game extends React.Component<PropsI, StateI> {
         // Remove blocked spikes
         return spikeIsAvailable(pieces, player, spikeNum);
       });
+
+      // Highlight the home if the player can move there
+      let highlightedHome0 = false;
+      if (allPiecesAreInFinalQuad(0, pieces[0])) {
+        highlightedHome0 = movesLeft.some(move => (
+          spikeNumber + move === 24
+          )
+        )
+      }
       
       this.setState({
         highlightedPiece: [0, pieceI],
         highlightedSpikes: validSpikes,
+        highlightedHome0,
       });
     }
   };
 
   handleSpikeClick = (spikeNum: number) => {
-    const { highlightedPiece, pieces } = this.state;
+    const { highlightedPiece } = this.state;
     this.movePiece(0, highlightedPiece[1], spikeNum);
   };
 
@@ -96,42 +112,22 @@ class Game extends React.Component<PropsI, StateI> {
         pieces,
         movesLeft,
         highlightedPiece: [-1, -1],
-        highlightedSpikes: []
+        highlightedSpikes: [],
+        highlightedHome0: false,
+        highlightedHome1: false,
       }, () => {
         if (myTurn) {
           this.playersMove();
         } else {
-          // Computer makes another move
           this.computerMove();
         }
       });
     } else {
       // No more moves. Change turn
       if (myTurn) {
-        // It's now the computers turn
-        const { dice, movesLeft } = getDiceNumbers();
-        this.setState({
-          myTurn: false,
-          needsToRoll: false,
-          pieces,
-          dice,
-          movesLeft,
-          highlightedPiece: [-1, -1],
-          highlightedSpikes: []
-        }, () => {
-          this.computerMove();
-        })
+        this.startComputersTurn(pieces);
       } else {
-        // It's now my turn
-        this.setState({
-          myTurn: true,
-          needsToRoll: true,
-          dice: [-1, -1],
-          pieces,
-          movesLeft,
-          highlightedPiece: [-1, -1],
-          highlightedSpikes: []
-        })
+        this.startPlayersTurn(pieces);
       }
     }
   };
@@ -147,11 +143,28 @@ class Game extends React.Component<PropsI, StateI> {
     });
   };
 
+  startComputersTurn = (pieces: number[][]) => {
+    const { dice, movesLeft } = getDiceNumbers();
+    this.setState({
+      myTurn: false,
+      needsToRoll: false,
+      pieces,
+      dice,
+      movesLeft,
+      highlightedPiece: [-1, -1],
+      highlightedSpikes: [],
+      highlightedHome0: false,
+      highlightedHome1: false,
+    }, () => {
+      this.computerMove();
+    })
+  }
+
   computerMove = () => {
     setTimeout(() => {
       const { pieces, movesLeft } = this.state
       if (!playerCanMove(pieces, 1, movesLeft)) {
-        console.log("Computer can't move");
+        this.startPlayersTurn(pieces);
       } else {
         let sortedPieces = [...pieces[1]];
         sortedPieces.sort((a, b) => b - a);
@@ -181,28 +194,28 @@ class Game extends React.Component<PropsI, StateI> {
           }
         }
       }
-    }, 2000);
+    }, 10);
+  }
+
+  startPlayersTurn = (pieces: number[][]) => {
+    this.setState({
+      myTurn: true,
+      needsToRoll: true,
+      dice: [-1, -1],
+      pieces,
+      movesLeft: [-1],
+      highlightedPiece: [-1, -1],
+      highlightedSpikes: [],
+      highlightedHome0: false,
+      highlightedHome1: false,
+    })
   }
 
   playersMove = () => {
     const { pieces, movesLeft } = this.state;
     if (!playerCanMove(pieces, 0, movesLeft)) {
-      console.log("Player Can't move.");
+      this.startComputersTurn(pieces);
     }
-  }
-
-  componentDidMount() {
-    const { dice, movesLeft } = getDiceNumbers();
-    this.setState({
-      myTurn: false,
-      needsToRoll: false,
-      dice,
-      movesLeft,
-      highlightedPiece: [-1, -1],
-      highlightedSpikes: []
-    }, () => {
-      this.computerMove();
-    })
   }
 
   render() {
@@ -213,6 +226,8 @@ class Game extends React.Component<PropsI, StateI> {
       myTurn,
       highlightedPiece,
       highlightedSpikes,
+      highlightedHome0,
+      highlightedHome1,
       needsToRoll
     } = this.state;
     return (
@@ -224,6 +239,8 @@ class Game extends React.Component<PropsI, StateI> {
           highlightedPiece={highlightedPiece}
           highlightedSpikes={highlightedSpikes}
           movesLeft={movesLeft}
+          highlightedHome0={highlightedHome0}
+          highlightedHome1={highlightedHome1}
         />
         <RollDiceBtn handleDiceClick={this.handleDiceClick} disabled={!needsToRoll} />
         <GameStatus dice={dice} myTurn={myTurn} movesLeft={movesLeft} />

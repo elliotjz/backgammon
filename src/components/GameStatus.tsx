@@ -25,9 +25,6 @@ const GameStatus: React.FunctionComponent<Props> = ({
           <p>
             Dice: {dice[0]} & {dice[1]}
           </p>
-          <p>
-            Moves left: {movesLeft.map(m => `${m}, `)}
-          </p>
         </>
       )}
 
