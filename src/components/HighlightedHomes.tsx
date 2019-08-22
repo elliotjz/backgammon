@@ -9,8 +9,6 @@ interface Props {
 
 const Rect = styled.rect`
   fill: ${props => `${props.theme.colors.highlight}bb`};
-  height: 150px;
-  width: 20px;
 `
 
 const HighlightedHomes: React.FunctionComponent<Props> = ({
@@ -21,13 +19,13 @@ const HighlightedHomes: React.FunctionComponent<Props> = ({
   return (
     <g>
       {highlightedHome0 && (
-        <g transform="translate(675, 320)" onClick={() => onClick(24)}>
-          <Rect />
+        <g className="HOME" onClick={() => onClick(24)}>
+          <Rect height="150" width="20" x="675" y="320" />
         </g>
       )}
       {highlightedHome1 && (
-        <g transform="translate(675, 30)" onClick={() => onClick(0)}>
-          <Rect />
+        <g onClick={() => onClick(0)}>
+          <Rect height="150" width="20" x="675" y="30" />
         </g>
       )}
     </g>

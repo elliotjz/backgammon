@@ -1,4 +1,6 @@
-const PLAYER0_HOME = 24;
-const PLAYER1_HOME = -1;
+const ME_HOME = 24;
+const OPPONENT_HOME = -1;
+const ME = 0;
+const OPPONENT = 1;
 
-export { PLAYER0_HOME, PLAYER1_HOME }
+export { ME_HOME, OPPONENT_HOME, ME, OPPONENT }

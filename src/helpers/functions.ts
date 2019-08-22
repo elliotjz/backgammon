@@ -1,4 +1,4 @@
-import { PLAYER0_HOME, PLAYER1_HOME } from './constants'
+import { ME_HOME, OPPONENT_HOME, ME, OPPONENT } from './constants'
 
 const allPiecesAreInFinalQuad = (player: number, pieces: number[]) => {
   if (player === 0) return pieces.every(p => p > 17);
@@ -58,33 +58,47 @@ const spikeIsAvailable = (pieces:number[][], player:number, spikeNum:number):boo
   return opp < 2;
 }
 
+const playerIsCaptured = (pieces:number[][], player: number) => {
+  const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
+  return pieces[player].indexOf(capturedIndex) !== -1;
+}
+
+/*
+ * Calculates whether a given move is valid
+ */
+const moveIsValid = (pieces:number[][], player:number, move:MoveOption):boolean => {
+  if (move.toSpike < -1 || move.toSpike > 24) return false;
+  if (playerIsCaptured(pieces, player)) {
+    const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
+    if (pieces[player][move.piece] !== capturedIndex) return false;
+  }
+  const res = opponentsOnSpike(pieces, player, move.toSpike) < 2;
+  return res;
+}
+
 /*
  * Returns an array of valid moves.
  */
-const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): MoveOption => (
-  { piece: 0, toSpike: 0 }
-)
-
-const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boolean => {
-  let piecesAvailableToMove:number[] = [];
-  const capturedIndex = player === 1 ? PLAYER0_HOME : PLAYER1_HOME;
-  if (pieces[player].indexOf(capturedIndex) === -1) {
-    // Player doesn't have captured pieces
-    piecesAvailableToMove = pieces[player];
-  } else {
-    // There is a captured piece, so the player must move it
-    piecesAvailableToMove = [capturedIndex];
-  }
-  let canMove = false;
-  piecesAvailableToMove.forEach(piece => {
-    movesLeft.forEach(moveOption => {
-      const targetSpike = player === 1 ? piece - moveOption : piece + moveOption;
-      if (spikeIsAvailable(pieces, player, targetSpike)) {
-        canMove = true;
+const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): MoveOption[] => {
+  const uniqueMovesLeft = movesLeft.filter((move, i, self) => self.indexOf(move) === i);
+  const options:MoveOption[] = [];
+  pieces[player].forEach((pieceSpike, i) => {
+    uniqueMovesLeft.forEach(move => {
+      const toSpike = player === ME ? pieceSpike + move : pieceSpike - move;
+      const moveOption:MoveOption = { piece: i, toSpike };
+      if (moveIsValid(pieces, player, moveOption)) {
+        options.push(moveOption);
       }
     })
-  })
-  return canMove;
+  });
+  return options;
+}
+
+/*
+ * Calculates whether a player has valid moves
+ */
+const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boolean => {
+  return getValidMoves(pieces, player, movesLeft).length > 0;
 }
 
 export {
@@ -94,5 +108,6 @@ export {
   capturesOpponent,
   spikeIsAvailable,
   getValidMoves,
+  playerIsCaptured,
   playerCanMove
 }

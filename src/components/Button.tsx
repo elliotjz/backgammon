@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 
-const Button = styled.button`
+const StyledButton = styled.button`
   background-color: ${props => props.theme.colors.green};
   border: none;
   border-radius: 25px;
@@ -30,19 +30,21 @@ const Button = styled.button`
 `;
 
 interface Props {
-  handleDiceClick(): void,
-  disabled: boolean
+  handleClick(): void,
+  disabled: boolean,
+  text: String,
 }
 
-const RollDiceBtn:React.FunctionComponent<Props> = ({
-  handleDiceClick,
-  disabled
+const Button:React.FunctionComponent<Props> = ({
+  handleClick,
+  disabled,
+  text,
 }: Props) => {
   return (
-    <Button type="button" disabled={disabled} onClick={handleDiceClick}>
-      Roll Dice
-    </Button>
+    <StyledButton type="button" disabled={disabled} onClick={handleClick}>
+      {text}
+    </StyledButton>
   );
 };
 
-export default RollDiceBtn;
+export default Button;
