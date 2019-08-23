@@ -16,9 +16,9 @@ const iToX = (i: number): number => {
 
 const iToY = (spikeNumber: number, i: number): number => {
   if (spikeNumber < 12) {
-    return 50 + i * 5;
+    return 50 + i * 10;
   } else {
-    return 450 - i * 8;
+    return 450 - i * 10;
   }
 };
 

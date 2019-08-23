@@ -12,7 +12,13 @@ import {
   playerCanMove,
   getValidMoves
 } from '../helpers/functions'
-import { capturedTest, allInEndQuad, almostFinished } from '../helpers/testPiceArrays'
+import {
+  startingState,
+  capturedTest,
+  allInEndQuad,
+  almostFinished,
+  almostFinished2
+} from '../helpers/testPiceArrays'
 import { ME_HOME, OPPONENT_HOME, ME } from '../helpers/constants'
 import Chat from "./Chat";
 
@@ -50,7 +56,7 @@ class Game extends React.Component<PropsI, StateI> {
     needsToRoll: true,
     dice: [-1, -1],
     movesLeft: [-1],
-    pieces: almostFinished,
+    pieces: startingState,
     highlightedPiece: [-1, -1],
     highlightedSpikes: [],
     highlightedHome0: false,
@@ -68,8 +74,12 @@ class Game extends React.Component<PropsI, StateI> {
       const validSpikes:number[] = validMoves.map(m => m.toSpike);
 
       // Highlight the home if the player can move there
-      const home = player === ME ? ME_HOME : OPPONENT_HOME;
-      let highlightedHome0 = validSpikes.indexOf(home) !== -1;
+      let highlightedHome0;
+      if (player === ME) {
+        highlightedHome0 = validSpikes.filter(s => s >= ME_HOME).length > 0;
+      } else {
+        highlightedHome0 = validSpikes.filter(s => s <= OPPONENT_HOME).length > 0;
+      }
       
       this.setState({
         highlightedPiece: [0, pieceI],
@@ -92,7 +102,10 @@ class Game extends React.Component<PropsI, StateI> {
     const indexOfMove = movesLeft.indexOf(diceNumberUsed);
 
     // Move the piece
-    pieces[player][i] = toSpike;
+    let limitedToSpike = toSpike;
+    if (toSpike < -1) limitedToSpike = -1;
+    if (toSpike > 24) limitedToSpike = 24;
+    pieces[player][i] = limitedToSpike;
 
     // Check if a piece has been captured
     if (capturesOpponent(pieces, player, toSpike)) {

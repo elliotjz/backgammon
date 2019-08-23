@@ -19,4 +19,9 @@ const almostFinished:number[][] = [
   [5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3]
 ]
 
-export { startingState, capturedTest, allInEndQuad, almostFinished }
+const almostFinished2:number[][] = [
+  [23, 22, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24],
+  [5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3]
+]
+
+export { startingState, capturedTest, allInEndQuad, almostFinished, almostFinished2 }

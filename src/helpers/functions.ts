@@ -67,17 +67,39 @@ const playerIsCaptured = (pieces:number[][], player: number) => {
  * Calculates whether a given move is valid
  */
 const moveIsValid = (pieces:number[][], player:number, move:MoveOption):boolean => {
-  if (move.toSpike < -1 || move.toSpike > 24) return false;
+  const home = player === ME ? ME_HOME : OPPONENT_HOME;
+  const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
+
+  // Player can't move pieces from home
+  if (pieces[player][move.piece] === home) return false;
+  
+  // If player is captured, they have to move the captured piece
   if (playerIsCaptured(pieces, player)) {
-    const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
     if (pieces[player][move.piece] !== capturedIndex) return false;
   }
 
-  // Player can't move home is pieces are outside the final quad
-  const home = player === ME ? ME_HOME : OPPONENT_HOME;
-  if (move.toSpike === home && !allPiecesAreInFinalQuad(player, pieces[player]))
+  // Player can't move home if pieces are outside the final quad
+  const finalQuad = allPiecesAreInFinalQuad(player, pieces[player]);
+  const moveGoesToHome = (player === ME && move.toSpike >= home) ||
+        (player === OPPONENT && move.toSpike <= home); 
+  if (moveGoesToHome && !finalQuad)
     return false;
   
+  // Player can only move home using a number that is too large if all
+  // pieces are in the final quad and the piece is the furthest away from home
+  const toSpikeIsPastHome = (player === ME && move.toSpike > ME_HOME) ||
+        (player === OPPONENT && move.toSpike < OPPONENT_HOME);
+  if (finalQuad && toSpikeIsPastHome) {
+    const pieceSpike = pieces[player][move.piece];
+    let pieceIsFurthestFromHome = true;
+    pieces[player].forEach((p: number) => {
+      if ((player === ME && p < pieceSpike) || (player === OPPONENT && p > pieceSpike))
+        pieceIsFurthestFromHome = false;
+    });
+
+    return pieceIsFurthestFromHome;
+  }
+
   const res = opponentsOnSpike(pieces, player, move.toSpike) < 2;
   return res;
 }
@@ -97,8 +119,8 @@ const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): Mo
       }
     })
   });
-  console.log(`player: ${player}`);
-  console.log(options);
+  // console.log(`player: ${player}`);
+  // console.log(options);
   return options;
 }
 
