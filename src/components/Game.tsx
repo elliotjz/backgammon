@@ -9,12 +9,12 @@ import {
   getDiceNumbers,
   capturesOpponent,
   spikeIsAvailable,
-  playerIsCaptured,
   playerCanMove,
   getValidMoves
 } from '../helpers/functions'
 import { capturedTest, allInEndQuad } from '../helpers/testPiceArrays'
 import { ME_HOME, OPPONENT_HOME, ME } from '../helpers/constants'
+import Chat from "./Chat";
 
 const Container = styled.div`
   display: flex;
@@ -243,6 +243,7 @@ class Game extends React.Component<PropsI, StateI> {
         <GameStatus myTurn={myTurn} />
         <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
         <Button handleClick={this.rollDice} disabled={computerMoveBtnDisabled} text="Computer Move" />
+        <Chat />
       </Container>
     );
   }

@@ -14,6 +14,7 @@ declare module 'styled-components' {
       greenPiece1: string,
       greenPiece2: string,
       white: string,
+      grey: string,
       black: string,
     }
   }
