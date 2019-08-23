@@ -12,7 +12,7 @@ import {
   playerCanMove,
   getValidMoves
 } from '../helpers/functions'
-import { capturedTest, allInEndQuad } from '../helpers/testPiceArrays'
+import { capturedTest, allInEndQuad, almostFinished } from '../helpers/testPiceArrays'
 import { ME_HOME, OPPONENT_HOME, ME } from '../helpers/constants'
 import Chat from "./Chat";
 
@@ -50,7 +50,7 @@ class Game extends React.Component<PropsI, StateI> {
     needsToRoll: true,
     dice: [-1, -1],
     movesLeft: [-1],
-    pieces: allInEndQuad,
+    pieces: almostFinished,
     highlightedPiece: [-1, -1],
     highlightedSpikes: [],
     highlightedHome0: false,
@@ -68,11 +68,8 @@ class Game extends React.Component<PropsI, StateI> {
       const validSpikes:number[] = validMoves.map(m => m.toSpike);
 
       // Highlight the home if the player can move there
-      let highlightedHome0 = false;
-      if (allPiecesAreInFinalQuad(0, pieces[0])) {
-        const home = player === ME ? ME_HOME : OPPONENT_HOME;
-        highlightedHome0 = validSpikes.filter(s => s === home).length > 0;
-      }
+      const home = player === ME ? ME_HOME : OPPONENT_HOME;
+      let highlightedHome0 = validSpikes.indexOf(home) !== -1;
       
       this.setState({
         highlightedPiece: [0, pieceI],
@@ -159,37 +156,14 @@ class Game extends React.Component<PropsI, StateI> {
 
   computerMove = () => {
     setTimeout(() => {
-      const { pieces, movesLeft } = this.state
-      if (!playerCanMove(pieces, 1, movesLeft)) {
+      const { pieces, movesLeft } = this.state;
+      const validMoves = getValidMoves(pieces, 1, movesLeft);
+      if (validMoves.length === 0) {
         this.startPlayersTurn(pieces);
       } else {
-        let sortedPieces = [...pieces[1]];
-        sortedPieces.sort((a, b) => b - a);
-        let lastPiecePosition = sortedPieces[0];
-        if (lastPiecePosition === 24) {
-          // Piece is trapped. Comp can only move the trapped pieces
-          if (spikeIsAvailable(pieces, 1, lastPiecePosition - movesLeft[0])) {
-            const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
-            this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[0]);
-          } else {
-            const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
-            this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[1]);
-          }
-        } else {
-          // No trapped pieces. Comp can move anything
-          let i = 1;
-          while (!spikeIsAvailable(pieces, 1, lastPiecePosition - movesLeft[0])
-            && i < sortedPieces.length) {
-            lastPiecePosition = sortedPieces[i];
-            i += 1;
-          }
-          if (i === pieces[0].length) {
-            console.log("Out of luck! No moves can be made!");
-          } else {
-            const indexOfLastPiece = pieces[1].indexOf(lastPiecePosition);
-            this.movePiece(1, indexOfLastPiece, lastPiecePosition - movesLeft[0])
-          }
-        }
+        const randomI = Math.floor(Math.random() * validMoves.length);
+        const chosenMove:MoveOption = validMoves[randomI];
+        this.movePiece(1, chosenMove.piece, chosenMove.toSpike);
       }
     }, 1000);
   }

@@ -72,6 +72,12 @@ const moveIsValid = (pieces:number[][], player:number, move:MoveOption):boolean 
     const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
     if (pieces[player][move.piece] !== capturedIndex) return false;
   }
+
+  // Player can't move home is pieces are outside the final quad
+  const home = player === ME ? ME_HOME : OPPONENT_HOME;
+  if (move.toSpike === home && !allPiecesAreInFinalQuad(player, pieces[player]))
+    return false;
+  
   const res = opponentsOnSpike(pieces, player, move.toSpike) < 2;
   return res;
 }
@@ -91,6 +97,8 @@ const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): Mo
       }
     })
   });
+  console.log(`player: ${player}`);
+  console.log(options);
   return options;
 }
 
