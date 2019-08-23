@@ -5,10 +5,8 @@ import Board from "./Board";
 import GameStatus from "./GameStatus";
 import Button from "./Button";
 import {
-  allPiecesAreInFinalQuad,
   getDiceNumbers,
   capturesOpponent,
-  spikeIsAvailable,
   playerCanMove,
   getValidMoves
 } from '../helpers/functions'

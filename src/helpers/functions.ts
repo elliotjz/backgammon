@@ -119,8 +119,6 @@ const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): Mo
       }
     })
   });
-  // console.log(`player: ${player}`);
-  // console.log(options);
   return options;
 }
 
