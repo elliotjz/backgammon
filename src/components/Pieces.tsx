@@ -14,13 +14,43 @@ const iToX = (i: number): number => {
   }
 };
 
-const iToY = (spikeNumber: number, i: number): number => {
-  if (spikeNumber < 12) {
-    return 50 + i * 10;
-  } else {
-    return 450 - i * 10;
-  }
-};
+const getYs = (pieces: number[][]):number[][] => {
+  // Create array of zeros
+  const spikeCount: number[] = [];
+  for (let i = 0; i < 26; i++) spikeCount.push(0);
+
+  // Create array to hold Y positions
+  const ys = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+
+  // Calculate Y position for each piece
+  pieces.forEach((playerPieces, playerNum) => {
+    playerPieces.forEach((spikeNum, i) => {
+      const numOnSpike = spikeCount[spikeNum + 1];
+      ys[playerNum][i] = spikeNum < 12 ? 50 + 30 * numOnSpike : 450 - 30 * numOnSpike;
+      spikeCount[spikeNum + 1]++;
+    });
+  });
+
+  // Squash pieces if necessary
+  spikeCount.forEach((piecesOnSpike, i) => {
+    if (piecesOnSpike > 5) {
+      const targetSpikeNum = i - 1;
+      const dy = 30 * 5 / piecesOnSpike;
+      let count = 0;
+      pieces.forEach((playerPieces, playerNum) => {
+        playerPieces.forEach((spikeNum, j) => {
+          if (spikeNum === targetSpikeNum) {
+            ys[playerNum][j] = spikeNum < 12 ? 50 + dy * count : 450 - dy * count;
+            count++;
+          }
+        });
+      });
+    }
+  })
+
+  return ys;
+}
 
 interface Props {
   pieces: number[][],
@@ -36,6 +66,7 @@ const Pieces: React.FunctionComponent<Props> = ({
   handlePieceClick,
   highlightedPiece
 }:Props) => {
+  const pieceYPositions = getYs(pieces);
   return (
     <g>
       {pieces.map((playerPieces: number[], player: number) => {
@@ -50,7 +81,7 @@ const Pieces: React.FunctionComponent<Props> = ({
                 key={i}
                 player={player}
                 x={iToX(spikeNumber)}
-                y={iToY(spikeNumber, i)}
+                y={pieceYPositions[player][i]}
                 highlighted={highlighted}
               />
             );

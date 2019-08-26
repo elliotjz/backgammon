@@ -41,7 +41,6 @@ const Board:React.FunctionComponent<Props> = ({
 }: Props ) => (
   <SVGBoard>
     <BoardBackground />
-    <AllDice movesLeft={movesLeft}/>
     <HighlightedSpikes
     highlightedSpikes={highlightedSpikes}
     onClick={handleSpikeClick}
@@ -56,6 +55,7 @@ const Board:React.FunctionComponent<Props> = ({
     highlightedHome1={highlightedHome1}
     onClick={handleSpikeClick}
     />
+    <AllDice movesLeft={movesLeft}/>
   </SVGBoard>
 )
 

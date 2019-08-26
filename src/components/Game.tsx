@@ -89,7 +89,7 @@ class Game extends React.Component<PropsI, StateI> {
     needsToRoll: true,
     dice: [-1, -1],
     movesLeft: [-1, -1],
-    pieces: almostFinished2,
+    pieces: startingState,
     highlightedPiece: [-1, -1],
     highlightedSpikes: [],
     highlightedHome0: false,
@@ -117,7 +117,7 @@ class Game extends React.Component<PropsI, StateI> {
     const opponentNum = movesLeft[1];
     if (opponentNum === -1) {
       this.setState({
-        movesLeft: [5, -1],
+        movesLeft: [getDiceNumber(), -1],
       });
     } else {
       let diceNum = getDiceNumber();
@@ -139,7 +139,7 @@ class Game extends React.Component<PropsI, StateI> {
         movesLeft: [-1, getDiceNumber()],
       });
     } else {
-      let diceNum = 1;
+      let diceNum = getDiceNumber();
       // Keep getting new numbers until they are different
       while (diceNum === playerNum) diceNum = getDiceNumber();
       this.startPlayPhase([playerNum, diceNum]);
