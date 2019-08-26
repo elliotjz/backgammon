@@ -25,17 +25,21 @@ interface Move {
 }
 
 /**
+ * Gets a random number between 1 and 6
+ * @returns A random number
+ */
+const getDiceNumber = () => {
+  return Math.ceil(Math.random() * 6);
+};
+
+/**
  * Creates two random dice numbers.
  * @returns an object containing the dice rolled and the moves available
  */
 const getDiceNumbers = ():DiceNumbers => {
   // TODO: Make a call to the API to get the dice numbers instead of calculating on the client
-  const getDiceNum = () => {
-    return Math.ceil(Math.random() * 6);
-  };
-  
-  const num1:number = getDiceNum();
-  const num2:number = getDiceNum();
+  const num1:number = getDiceNumber();
+  const num2:number = getDiceNumber();
 
   let movesLeft = num1 === num2 ? [num1, num1, num1, num1] : [num1, num2]
   return {
@@ -161,6 +165,7 @@ const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boo
 }
 
 export {
+  getDiceNumber,
   getDiceNumbers,
   capturesOpponent,
   playerCanMove,

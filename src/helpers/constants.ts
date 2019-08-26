@@ -8,4 +8,17 @@ const OPPONENT_HOME = -1;
 const ME = 0;
 const OPPONENT = 1;
 
-export { ME_HOME, OPPONENT_HOME, ME, OPPONENT }
+// Game phase constants
+const NOT_STARTED = 0;
+const INITIAL_ROLLS = 1;
+const PLAY = 2;
+
+export {
+  ME_HOME,
+  OPPONENT_HOME,
+  ME,
+  OPPONENT,
+  NOT_STARTED,
+  INITIAL_ROLLS,
+  PLAY,
+}

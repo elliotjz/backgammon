@@ -5,6 +5,7 @@ import Board from "./Board";
 import GameStatus from "./GameStatus";
 import Button from "./Button";
 import {
+  getDiceNumber,
   getDiceNumbers,
   capturesOpponent,
   playerCanMove,
@@ -17,14 +18,48 @@ import {
   almostFinished,
   almostFinished2
 } from '../helpers/testPiceArrays'
-import { ME_HOME, OPPONENT_HOME, ME } from '../helpers/constants'
+import {
+  ME_HOME,
+  OPPONENT_HOME,
+  ME,
+  NOT_STARTED,
+  INITIAL_ROLLS,
+  PLAY,
+} from '../helpers/constants'
 import Chat from "./Chat";
+import Stats from "./Stats";
 
 const Container = styled.div`
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: 750px 1fr;
+
+  .board-container {
+    width: 750px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: auto;
+  }
+
+  .stats-container {
+    grid-column: 1 / 3;
+  }
+
+  @media (max-width: 1000px) {
+    grid-template-columns: 1fr;
+
+    .stats-container {
+      grid-column: 1 / 2;
+    }
+  }
 `;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+`
 
 interface Move {
   piece: number,
@@ -34,8 +69,11 @@ interface Move {
 interface PropsI {}
 
 interface StateI {
+  gamePhase: number,
   myTurn: boolean,
   needsToRoll: boolean,
+  initialDice: number,
+  opponentInitialDice: number,
   dice: number[],
   movesLeft: number[],
   pieces: number[][],
@@ -48,8 +86,11 @@ interface StateI {
 
 class Game extends React.Component<PropsI, StateI> {
   state = {
+    gamePhase: NOT_STARTED,
     myTurn: true,
     needsToRoll: true,
+    initialDice: -1,
+    opponentInitialDice: -1,
     dice: [-1, -1],
     movesLeft: [-1],
     pieces: startingState,
@@ -59,6 +100,84 @@ class Game extends React.Component<PropsI, StateI> {
     highlightedHome1: false,
     message: "",
   };
+
+  /**
+   * Starts a new game
+   */
+  startGame = () => {
+    // TODO: Send a new-game or new-game message over socket
+    this.setState({
+      gamePhase: INITIAL_ROLLS,
+    })
+  }
+
+  /**
+   * Rolls the player's initial dice to decide who goes first
+   */
+  rollInitialDice = () => {
+    // TODO: Send a roll-initial-dice message over socket
+    const { opponentInitialDice } = this.state;
+    if (opponentInitialDice === -1) {
+      this.setState({
+        initialDice: getDiceNumber(),
+      });
+    } else {
+      const diceNum = getDiceNumber();
+      const myTurn = diceNum > opponentInitialDice;
+      const message1 = myTurn ? "You go first" : "Opponent goes first";
+      const message2 = myTurn ? "Your turn!" : "Opponent's turn";
+      this.setState({
+        initialDice: diceNum,
+        message: message1,
+      });
+      setTimeout(() => {
+        this.setState({
+          gamePhase: PLAY,
+          myTurn,
+          needsToRoll: false,
+          initialDice: -1,
+          opponentInitialDice: -1,
+          dice: [diceNum, opponentInitialDice],
+          movesLeft: [diceNum, opponentInitialDice],
+          message: message2,
+        });
+      }, 2000);
+    }
+  }
+
+  /**
+   * Temporary function to roll the opponent's initial dice to decide who goes first
+   */
+  rollOpponentInitialDice = () => {
+    // TODO: Delete this as it will be handled by the server and other client
+    const { initialDice } = this.state;
+    if (initialDice === -1) {
+      this.setState({
+        opponentInitialDice: getDiceNumber(),
+      });
+    } else {
+      const opponentDiceNum = getDiceNumber();
+      const myTurn = initialDice > opponentDiceNum;
+      const message1 = myTurn ? "You go first" : "Opponent goes first";
+      const message2 = myTurn ? "Your turn!" : "Opponent's turn";
+      this.setState({
+        opponentInitialDice: opponentDiceNum,
+        message: message1,
+      });
+      setTimeout(() => {
+        this.setState({
+          gamePhase: PLAY,
+          myTurn,
+          needsToRoll: false,
+          initialDice: -1,
+          opponentInitialDice: -1,
+          dice: [initialDice, opponentDiceNum],
+          movesLeft: [initialDice, opponentDiceNum],
+          message: message2,
+        });
+      }, 2000);
+    }
+  }
 
   /**
    * Handles click events on the pieces. It will either ignore the click,
@@ -143,16 +262,23 @@ class Game extends React.Component<PropsI, StateI> {
         if (myTurn) {
           this.checkPlayerCanMove();
         } else {
-          // TODO: Send the Move to the socket
           this.opponentsMove();
         }
       });
     } else {
       // No more moves. Change turn
       if (myTurn) {
-        this.startOpponentsTurn(pieces);
+        this.setState({ pieces }, () => {
+          setTimeout(() => {
+            this.startOpponentsTurn();
+          }, 2000);
+        })
       } else {
-        this.startPlayersTurn(pieces);
+        this.setState({ pieces }, () => {  
+          setTimeout(() => {
+            this.startPlayersTurn();
+          }, 2000);
+        })
       }
     }
   };
@@ -168,24 +294,35 @@ class Game extends React.Component<PropsI, StateI> {
       movesLeft,
       needsToRoll: false
     }, () => {
-      const { myTurn } = this.state;
-      if (myTurn) this.checkPlayerCanMove();
-      else this.opponentsMove();
+      this.checkPlayerCanMove();
     });
   };
 
   /**
+   * Temporary function to roll the dice for the opponent
+   */
+  opponentRollDice = () => {
+    // TODO: Delete this as it will be handled by the server and other client
+    const { dice, movesLeft } = getDiceNumbers();
+    this.setState({
+      dice,
+      movesLeft,
+      needsToRoll: false
+    });
+  }
+
+  /**
    * Sets the state to start the opponent's turn
    */
-  startOpponentsTurn = (pieces: number[][]) => {
+  startOpponentsTurn = () => {
     this.setState({
       myTurn: false,
       needsToRoll: true,
-      pieces,
       highlightedPiece: [-1, -1],
       highlightedSpikes: [],
       highlightedHome0: false,
       highlightedHome1: false,
+      message: "Opponent's turn",
     });
   }
 
@@ -201,7 +338,10 @@ class Game extends React.Component<PropsI, StateI> {
       const { pieces, movesLeft } = this.state;
       const validMoves = getValidMoves(pieces, 1, movesLeft);
       if (validMoves.length === 0) {
-        this.startPlayersTurn(pieces);
+        this.setState({ message: "Opponent can't move." });
+        setTimeout(() => {
+          this.startPlayersTurn();
+        }, 2000);
       } else {
         const randomI = Math.floor(Math.random() * validMoves.length);
         const chosenMove:Move = validMoves[randomI];
@@ -213,17 +353,17 @@ class Game extends React.Component<PropsI, StateI> {
   /**
    * Sets the state to start the player's turn
    */
-  startPlayersTurn = (pieces: number[][]) => {
+  startPlayersTurn = () => {
     this.setState({
       myTurn: true,
       needsToRoll: true,
       dice: [-1, -1],
-      pieces,
       movesLeft: [-1],
       highlightedPiece: [-1, -1],
       highlightedSpikes: [],
       highlightedHome0: false,
       highlightedHome1: false,
+      message: "You move!",
     })
   }
 
@@ -233,39 +373,74 @@ class Game extends React.Component<PropsI, StateI> {
   checkPlayerCanMove = () => {
     const { pieces, movesLeft } = this.state;
     if (!playerCanMove(pieces, 0, movesLeft)) {
-      this.startOpponentsTurn(pieces);
+      this.setState({
+        message: "No valid moves. Opponent's turn"
+      }, () => {
+        setTimeout(() => this.startOpponentsTurn(), 2000);
+      });
     }
   }
 
   render() {
     const {
+      gamePhase,
       pieces,
+      initialDice,
+      opponentInitialDice,
       movesLeft,
       myTurn,
       highlightedPiece,
       highlightedSpikes,
       highlightedHome0,
       highlightedHome1,
-      needsToRoll
+      needsToRoll,
+      message,
     } = this.state;
     const rollDiceBtnDisabled = !myTurn || !needsToRoll;
-    const computerMoveBtnDisabled = myTurn || !needsToRoll;
+    const computerRollBtnDisabled = myTurn || !needsToRoll;
+    const computerMoveBtnDisabled = myTurn || needsToRoll;
     return (
       <Container>
-        <Board
-          pieces={pieces}
-          handlePieceClick={this.handlePieceClick}
-          handleSpikeClick={this.handleSpikeClick}
-          highlightedPiece={highlightedPiece}
-          highlightedSpikes={highlightedSpikes}
-          movesLeft={movesLeft}
-          highlightedHome0={highlightedHome0}
-          highlightedHome1={highlightedHome1}
-        />
-        <GameStatus myTurn={myTurn} />
-        <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
-        <Button handleClick={this.rollDice} disabled={computerMoveBtnDisabled} text="Computer Move" />
-        <Chat />
+        <div className="board-container">
+          {gamePhase === NOT_STARTED ? (
+            <Button handleClick={this.startGame} disabled={false} text="Start Game" />
+          ) : (
+            <>
+              <Board
+                gamePhase={gamePhase}
+                pieces={pieces}
+                handlePieceClick={this.handlePieceClick}
+                handleSpikeClick={this.handleSpikeClick}
+                highlightedPiece={highlightedPiece}
+                highlightedSpikes={highlightedSpikes}
+                initialDice={initialDice}
+                opponentInitialDice={opponentInitialDice}
+                movesLeft={movesLeft}
+                highlightedHome0={highlightedHome0}
+                highlightedHome1={highlightedHome1}
+              />
+              <GameStatus message={message} />
+              {gamePhase === INITIAL_ROLLS ? (
+                <ButtonContainer>
+                  <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
+                  <Button handleClick={this.rollOpponentInitialDice} disabled={false} text="Computer Roll Dice" />
+                </ButtonContainer>
+              ) : (
+                <ButtonContainer>
+                  <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
+                  <Button handleClick={this.opponentRollDice} disabled={computerRollBtnDisabled} text="Trigger computer roll" />
+                  <Button handleClick={this.opponentsMove} disabled={computerMoveBtnDisabled} text="Trigger computer move" />
+                </ButtonContainer>
+              )}
+            </>
+          )}
+        </div>
+        <div className="chat-container">
+          <Chat />
+        </div>
+        <div className="stats-container">
+          <Stats />
+        </div>
       </Container>
     );
   }

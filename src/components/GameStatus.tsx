@@ -7,16 +7,18 @@ const Container = styled.div`
 `;
 
 interface Props {
-  myTurn: boolean
+  message: string,
 }
 
 /**
  * Renders the game status and messages to the player
  */
-const GameStatus: React.FunctionComponent<Props> = ({ myTurn }: Props) => {
+const GameStatus: React.FunctionComponent<Props> = ({
+  message,
+}: Props) => {
   return (
     <Container>
-      <p>{myTurn ? "Your Turn" : "Opponent's Turn"}</p>
+      {message !== "" && <p>{message}</p>}
     </Container>
   );
 }

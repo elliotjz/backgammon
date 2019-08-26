@@ -6,7 +6,7 @@ const StyledButton = styled.button`
   border: none;
   border-radius: 25px;
   padding: 15px 32px;
-  color: #fff;
+  color: ${props => props.theme.colors.white};
   text-align: center;
   font-size: 16px;
   box-shadow: 0 0 5px 5px #00000033;
