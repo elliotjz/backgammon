@@ -11,15 +11,30 @@ interface Props {
   message: MessageObject,
 }
 
-const Label = styled.p`
-  color: ${props => props.theme.colors.grey};
-  font-size: 12px;
-  margin-bottom: 0;
-`
+const StyledP = styled.p`
+  margin: 2px 0;
+  display: block;
+  border: none;
 
-const MessageP = styled.p`
-  color: ${props => props.theme.colors.white}; 
-  margin-top: 2px;
+  span {
+    border-radius: 10px;
+    padding: 5px;
+  }
+
+  small {
+    font-size: 12px;
+    color: ${props => props.theme.colors.darkGrey};
+  }
+
+  .right {
+    float: right;
+    background-color: ${props => `${props.theme.colors.green}33`};
+  }
+  
+  .left {
+    float: left;
+    background-color: ${props => props.theme.colors.lightGrey};
+  }
 `
 
 /**
@@ -35,14 +50,15 @@ const Message:React.FunctionComponent<Props> = ({ message }: Props ) => {
   const AmPm = hours > 0 && hours < 12 ? "AM" : "PM";
   const timeText = `${hoursText}:${minutesText} ${AmPm}`;
   return (
-    <>
-      <Label>
+    <StyledP>
+      <span className={message.player === 0 ? "right" : "left"}>
+        <small>
         {playerText} {timeText}
-      </Label>
-      <MessageP>
+        </small>
+        <br />
         {message.message}
-      </MessageP>
-    </>
+      </span>
+    </StyledP>
   );
 };
 

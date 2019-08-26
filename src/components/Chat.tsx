@@ -20,18 +20,29 @@ const cannedAnswers = [
 ]
 
 const Container = styled.div`
-  width: 80%;
-  height: 300px;
-  margin: 20px auto;
-  background-color: ${props => props.theme.colors.black};
-  border: solid ${props => props.theme.colors.green} 1px;
+  height: 500px;
+  margin: 20px;
   display: flex;
   flex-direction: column;
-
+  align-items: center;
+  
   div {
     flex: 1;
-    overflow: scroll;
-    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: ${props => props.theme.colors.white};
+    border: solid ${props => props.theme.colors.green} 2px;
+    border-radius: 10px;
+    overflow: hidden;
+
+    div {
+      flex: 1;
+      overflow: scroll;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+    }
   }
 `
 
@@ -92,8 +103,9 @@ class Chat extends React.Component {
   render() {
     const { messages, inputText }: { messages: MessageObject[], inputText: string } = this.state;
     return (
-      <div>
-        <Container>
+      <Container>
+        <h3>Chat</h3>
+        <div>
           <div className="message-div" ref={this.messageContRef} >
             {messages.map(m => <Message key={m.time} message={m} />)}
           </div>
@@ -102,9 +114,9 @@ class Chat extends React.Component {
             text={inputText}
             handleChange={this.handleChange}
           />
-        </Container>
-        <Button handleClick={this.handleComputerMessage} disabled={false} text="Computer message" />
-      </div>
+        </div>
+        <Button handleClick={this.handleComputerMessage} disabled={false} text="Send Opponent Message" />
+      </Container>
     );
   }
 }

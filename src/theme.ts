@@ -13,7 +13,9 @@ const theme: DefaultTheme = {
     greenPiece1: "#09660c",
     greenPiece2: "#0c8210",
     white: "#fff",
+    lightGrey: "#ddd",
     grey: "#bbb",
+    darkGrey: "#666",
     black: "#000",
   },
 }

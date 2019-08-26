@@ -14,18 +14,19 @@ const Form = styled.form`
   height: 34px;
   height: 30px;
   box-sizing: content-box;
-  border-top: 1px ${props => props.theme.colors.green} solid;
+  border-top: 2px ${props => props.theme.colors.green} solid;
 
   input {
     flex: 1;
     background-color: ${props => props.theme.colors.white};
     height: 30px;
+    font-size: 14px;
     padding-left: 10px;
     border: 1px ;
   }
 
   button {
-    width: 100px;
+    width: 80px;
     height: 30px;
     background-color: ${props => props.theme.colors.green};
     color: ${props => props.theme.colors.white};
