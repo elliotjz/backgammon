@@ -13,7 +13,7 @@ import HighlightedSpikes from "./HighlightedSpikes";
 import Pieces from "./Pieces";
 import AllDice from "./AllDice";
 import HighlightedHomes from "./HighlightedHomes";
-import { INITIAL_ROLLS } from "../helpers/constants";
+import { INITIAL_ROLLS, PLAY } from "../helpers/constants";
 
 interface Props {
   gamePhase: number,
@@ -48,9 +48,7 @@ const Board:React.FunctionComponent<Props> = ({
 }: Props ) => (
   <SVGBoard>
     <BoardBackground />
-    {gamePhase === INITIAL_ROLLS ? (
-    <AllDice movesLeft={[initialDice, opponentInitialDice]} />
-    ) : (
+    {gamePhase === PLAY ? (
       <>
         <HighlightedSpikes
         highlightedSpikes={highlightedSpikes}
@@ -68,7 +66,9 @@ const Board:React.FunctionComponent<Props> = ({
         onClick={handleSpikeClick}
         />
       </>
-    )}
+      ) : (
+        <AllDice movesLeft={[initialDice, opponentInitialDice]} />
+      )}
   </SVGBoard>
 )
 

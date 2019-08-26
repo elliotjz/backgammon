@@ -25,8 +25,8 @@ const almostFinished:number[][] = [
 ]
 
 const almostFinished2:number[][] = [
-  [23, 22, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24],
-  [5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3]
+  [23, 22, 21, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24],
+  [-1, -1, -1, -1, -1, -1, -1, 0, 0, -1, -1, -1, -1, -1, -1]
 ]
 
 export { startingState, capturedTest, allInEndQuad, almostFinished, almostFinished2 }

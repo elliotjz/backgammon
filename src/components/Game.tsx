@@ -93,7 +93,7 @@ class Game extends React.Component<PropsI, StateI> {
     opponentInitialDice: -1,
     dice: [-1, -1],
     movesLeft: [-1],
-    pieces: startingState,
+    pieces: almostFinished2,
     highlightedPiece: [-1, -1],
     highlightedSpikes: [],
     highlightedHome0: false,
@@ -108,6 +108,7 @@ class Game extends React.Component<PropsI, StateI> {
     // TODO: Send a new-game or new-game message over socket
     this.setState({
       gamePhase: INITIAL_ROLLS,
+      message: "Roll the dice to see who goes first."
     })
   }
 
@@ -249,6 +250,20 @@ class Game extends React.Component<PropsI, StateI> {
     // Update moves left
     movesLeft.splice(indexOfMove, 1);
 
+    // Check if player wins
+    const { result, message } = this.isGameOver();
+    if (result) {
+      this.setState({
+        movesLeft: [-1],
+        highlightedPiece: [-1, -1],
+        highlightedSpikes: [],
+        highlightedHome0: false,
+        highlightedHome1: false,
+        message,
+      })
+      return;
+    }
+
     if (movesLeft.length > 0) {
       // Current player has moves left
       this.setState({
@@ -381,6 +396,19 @@ class Game extends React.Component<PropsI, StateI> {
     }
   }
 
+  isGameOver = () => {
+    const { pieces } = this.state;
+    const playerWins = pieces[0].every(p => p === ME_HOME);
+    const opponentWins = pieces[1].every(p => p === OPPONENT_HOME);
+    let message = "";
+    if (playerWins) message = "You Win! 😃";
+    if (opponentWins) message = "You Loose 😿"
+    return {
+      result: playerWins || opponentWins,
+      message
+    }
+  }
+
   render() {
     const {
       gamePhase,
@@ -402,36 +430,36 @@ class Game extends React.Component<PropsI, StateI> {
     return (
       <Container>
         <div className="board-container">
+          <Board
+            gamePhase={gamePhase}
+            pieces={pieces}
+            handlePieceClick={this.handlePieceClick}
+            handleSpikeClick={this.handleSpikeClick}
+            highlightedPiece={highlightedPiece}
+            highlightedSpikes={highlightedSpikes}
+            initialDice={initialDice}
+            opponentInitialDice={opponentInitialDice}
+            movesLeft={movesLeft}
+            highlightedHome0={highlightedHome0}
+            highlightedHome1={highlightedHome1}
+          />
+          <GameStatus message={message} />
           {gamePhase === NOT_STARTED ? (
             <Button handleClick={this.startGame} disabled={false} text="Start Game" />
           ) : (
             <>
-              <Board
-                gamePhase={gamePhase}
-                pieces={pieces}
-                handlePieceClick={this.handlePieceClick}
-                handleSpikeClick={this.handleSpikeClick}
-                highlightedPiece={highlightedPiece}
-                highlightedSpikes={highlightedSpikes}
-                initialDice={initialDice}
-                opponentInitialDice={opponentInitialDice}
-                movesLeft={movesLeft}
-                highlightedHome0={highlightedHome0}
-                highlightedHome1={highlightedHome1}
-              />
-              <GameStatus message={message} />
               {gamePhase === INITIAL_ROLLS ? (
                 <ButtonContainer>
-                  <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
-                  <Button handleClick={this.rollOpponentInitialDice} disabled={false} text="Computer Roll Dice" />
-                </ButtonContainer>
-              ) : (
-                <ButtonContainer>
-                  <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
-                  <Button handleClick={this.opponentRollDice} disabled={computerRollBtnDisabled} text="Trigger computer roll" />
-                  <Button handleClick={this.opponentsMove} disabled={computerMoveBtnDisabled} text="Trigger computer move" />
-                </ButtonContainer>
-              )}
+                <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
+                <Button handleClick={this.rollOpponentInitialDice} disabled={false} text="Computer Roll Dice" />
+              </ButtonContainer>
+            ) : (
+              <ButtonContainer>
+                <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
+                <Button handleClick={this.opponentRollDice} disabled={computerRollBtnDisabled} text="Trigger computer roll" />
+                <Button handleClick={this.opponentsMove} disabled={computerMoveBtnDisabled} text="Trigger computer move" />
+              </ButtonContainer>
+            )}
             </>
           )}
         </div>

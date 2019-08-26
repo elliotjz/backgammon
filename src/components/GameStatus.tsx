@@ -3,7 +3,10 @@ import styled from "styled-components";
 
 const Container = styled.div`
   text-align: center;
-  padding: 10px 0;
+
+  p {
+    font-size: 20px;
+  }
 `;
 
 interface Props {
