@@ -216,7 +216,15 @@ class Game extends React.Component<PropsI, StateI> {
     const diceNumberUsed = player === ME ?
       toSpike - pieces[player][piece] :
       pieces[player][piece] - toSpike;
-    const indexOfMove = movesLeft.indexOf(diceNumberUsed);
+    let indexOfMove = movesLeft.indexOf(diceNumberUsed);
+
+    // indexOfMove will be -1 if the number used is larger than the required
+    // mode. This will occur when moving pieces home at the end of the game.
+    let i = 1;
+    while (indexOfMove === -1) {
+      indexOfMove = movesLeft.indexOf(diceNumberUsed + i);
+      i++;
+    }
     // TODO: Make a call to the API to move the piece
     // TODO: The API will respond with the new board state
 
