@@ -14,6 +14,9 @@ interface Props {
   onClick(spikeNum: number): void
 }
 
+/**
+ * Renders highlights on spikes that the player can move to
+ */
 const HighlightedSpikes:React.FunctionComponent<Props> = ({
   highlightedSpikes,
   onClick

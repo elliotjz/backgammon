@@ -26,14 +26,12 @@ const Container = styled.div`
   flex-direction: column;
 `;
 
-interface MoveOption {
+interface Move {
   piece: number,
   toSpike: number,
 }
 
-interface PropsI {
-
-}
+interface PropsI {}
 
 interface StateI {
   myTurn: boolean,
@@ -62,12 +60,18 @@ class Game extends React.Component<PropsI, StateI> {
     message: "",
   };
 
+  /**
+   * Handles click events on the pieces. It will either ignore the click,
+   * or highlight the piece and spikes where the piece can move to.
+   * @param player the player who clicked on the piece
+   * @param pieceI which piece the player clicked
+   */
   handlePieceClick = (player:number, pieceI:number) => {
     const { myTurn, needsToRoll, movesLeft, pieces } = this.state;
     const isMyChip = player === ME;
     if (myTurn && !needsToRoll && isMyChip) {
       // Highlight the spikes that the player can move to
-      const validMoves:MoveOption[] = getValidMoves(pieces, 0, movesLeft)
+      const validMoves:Move[] = getValidMoves(pieces, 0, movesLeft)
         .filter(m => m.piece === pieceI);
       const validSpikes:number[] = validMoves.map(m => m.toSpike);
 
@@ -87,23 +91,35 @@ class Game extends React.Component<PropsI, StateI> {
     }
   };
 
+  /**
+   * Handles spike clicks. This will move the highlighted piece to the clicked spike.
+   * @param spikeNum The spike for the piece to move to
+   */
   handleSpikeClick = (spikeNum: number) => {
     const { highlightedPiece } = this.state;
     this.movePiece(0, highlightedPiece[1], spikeNum);
   };
 
-  movePiece = (player:number, i:number, toSpike:number) => {
+  /**
+   * Moves a piece on the board
+   * @param player The player who is moving
+   * @param piece the piece to move
+   * @param soSpike the spike to move to
+   */
+  movePiece = (player:number, piece:number, toSpike:number) => {
     const { pieces, movesLeft, myTurn } = this.state;
     const diceNumberUsed = player === ME ?
-      toSpike - pieces[player][i] :
-      pieces[player][i] - toSpike;
+      toSpike - pieces[player][piece] :
+      pieces[player][piece] - toSpike;
     const indexOfMove = movesLeft.indexOf(diceNumberUsed);
+    // TODO: Make a call to the API to move the piece
+    // TODO: The API will respond with the new board state
 
     // Move the piece
     let limitedToSpike = toSpike;
     if (toSpike < -1) limitedToSpike = -1;
     if (toSpike > 24) limitedToSpike = 24;
-    pieces[player][i] = limitedToSpike;
+    pieces[player][piece] = limitedToSpike;
 
     // Check if a piece has been captured
     if (capturesOpponent(pieces, player, toSpike)) {
@@ -125,22 +141,27 @@ class Game extends React.Component<PropsI, StateI> {
         highlightedHome1: false,
       }, () => {
         if (myTurn) {
-          this.playersMove();
+          this.checkPlayerCanMove();
         } else {
-          this.computerMove();
+          // TODO: Send the Move to the socket
+          this.opponentsMove();
         }
       });
     } else {
       // No more moves. Change turn
       if (myTurn) {
-        this.startComputersTurn(pieces);
+        this.startOpponentsTurn(pieces);
       } else {
         this.startPlayersTurn(pieces);
       }
     }
   };
 
+  /**
+   * Gets random dice numbers
+   */
   rollDice = () => {
+    // TODO: Get the dice from the server via socket
     const { dice, movesLeft } = getDiceNumbers();
     this.setState({
       dice,
@@ -148,12 +169,15 @@ class Game extends React.Component<PropsI, StateI> {
       needsToRoll: false
     }, () => {
       const { myTurn } = this.state;
-      if (myTurn) this.playersMove();
-      else this.computerMove();
+      if (myTurn) this.checkPlayerCanMove();
+      else this.opponentsMove();
     });
   };
 
-  startComputersTurn = (pieces: number[][]) => {
+  /**
+   * Sets the state to start the opponent's turn
+   */
+  startOpponentsTurn = (pieces: number[][]) => {
     this.setState({
       myTurn: false,
       needsToRoll: true,
@@ -165,7 +189,14 @@ class Game extends React.Component<PropsI, StateI> {
     });
   }
 
-  computerMove = () => {
+  /**
+   * Makes an automated move. It gets all available moves an selects on at random
+   */
+  opponentsMove = () => {
+    // TODO: Wait for websocket to send a message saying that the other player has moved.
+    // TODO: The server will check whether the move is valid, and will send an updated
+    // TODO: board state to the client.
+    // TODO: Hand control back to the player.
     setTimeout(() => {
       const { pieces, movesLeft } = this.state;
       const validMoves = getValidMoves(pieces, 1, movesLeft);
@@ -173,12 +204,15 @@ class Game extends React.Component<PropsI, StateI> {
         this.startPlayersTurn(pieces);
       } else {
         const randomI = Math.floor(Math.random() * validMoves.length);
-        const chosenMove:MoveOption = validMoves[randomI];
+        const chosenMove:Move = validMoves[randomI];
         this.movePiece(1, chosenMove.piece, chosenMove.toSpike);
       }
     }, 1000);
   }
 
+  /**
+   * Sets the state to start the player's turn
+   */
   startPlayersTurn = (pieces: number[][]) => {
     this.setState({
       myTurn: true,
@@ -193,10 +227,13 @@ class Game extends React.Component<PropsI, StateI> {
     })
   }
 
-  playersMove = () => {
+  /**
+   * Checks whether the player can move. If it can't, it gives control to the other player
+   */
+  checkPlayerCanMove = () => {
     const { pieces, movesLeft } = this.state;
     if (!playerCanMove(pieces, 0, movesLeft)) {
-      this.startComputersTurn(pieces);
+      this.startOpponentsTurn(pieces);
     }
   }
 

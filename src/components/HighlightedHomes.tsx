@@ -11,6 +11,9 @@ const Rect = styled.rect`
   fill: ${props => `${props.theme.colors.highlight}bb`};
 `
 
+/**
+ * Renders highlights for the home zones when the player can move there
+ */
 const HighlightedHomes: React.FunctionComponent<Props> = ({
   highlightedHome0,
   highlightedHome1,

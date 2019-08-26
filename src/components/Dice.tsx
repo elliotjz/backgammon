@@ -19,6 +19,9 @@ interface Props {
   number: number,
 }
 
+/**
+ * Renders SVG dice to the board
+ */
 const Dice: React.FunctionComponent<Props>  = ({
   number
 }:Props) => {

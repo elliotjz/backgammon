@@ -10,6 +10,9 @@ interface Props {
   myTurn: boolean
 }
 
+/**
+ * Renders the game status and messages to the player
+ */
 const GameStatus: React.FunctionComponent<Props> = ({ myTurn }: Props) => {
   return (
     <Container>

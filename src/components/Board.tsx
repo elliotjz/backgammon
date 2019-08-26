@@ -25,6 +25,10 @@ interface Props {
   movesLeft: number[]
 }
 
+/**
+ * Renders the backgammon board.
+ * Includes a background, pieces, highlighted spikes, dice, and highlighted homes
+ */
 const Board:React.FunctionComponent<Props> = ({
   pieces,
   handlePieceClick,

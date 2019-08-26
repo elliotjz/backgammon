@@ -35,6 +35,9 @@ const Form = styled.form`
   }
 `
 
+/**
+ * Renders the form that allows a player to send a chat message
+ */
 const ChatForm:React.FunctionComponent<Props> = ({
   handleMessageSend,
   handleChange,

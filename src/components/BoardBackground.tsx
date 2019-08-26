@@ -19,6 +19,9 @@ const WhiteSpike = styled.g`
   stroke: ${props => props.theme.colors.white};;
 `
 
+/**
+ * Renders the static background of the board.
+ */
 const BoardBackground = () => {
   return (
     <GameArea>

@@ -11,6 +11,7 @@ interface MessageObject {
   message: string,
 }
 
+// Messages for the computer to send
 const cannedAnswers = [
   "Why did you move there?",
   "That was an awful move, you're stuffed.",
@@ -34,14 +35,12 @@ const Container = styled.div`
   }
 `
 
+/**
+ * Renders and controls the chat functions of the game
+ */
 class Chat extends React.Component {
   state = {
-    messages: [
-      { player: 0, time: 1566448345821, message: "You're gonna loose." },
-      { player: 1, time: 1566449355821, message: "Naaa." },
-      { player: 0, time: 1566458365821, message: "Yeah, you're definitely going to lose, I'm just too good..." },
-      { player: 0, time: 1566848375821, message: "Naaaa" }
-    ],
+    messages: [],
     inputText: "",
   }
 
@@ -77,7 +76,7 @@ class Chat extends React.Component {
   }
 
   addMessage = (message: MessageObject) => {
-    const { messages } = this.state;
+    const { messages }: { messages: MessageObject[] } = this.state;
     messages.push(message);
     this.setState({
       messages,
@@ -91,7 +90,7 @@ class Chat extends React.Component {
   }
 
   render() {
-    const { messages, inputText } = this.state;
+    const { messages, inputText }: { messages: MessageObject[], inputText: string } = this.state;
     return (
       <div>
         <Container>

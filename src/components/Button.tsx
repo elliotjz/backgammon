@@ -35,6 +35,9 @@ interface Props {
   text: String,
 }
 
+/**
+ * Reusable button component
+ */
 const Button:React.FunctionComponent<Props> = ({
   handleClick,
   disabled,

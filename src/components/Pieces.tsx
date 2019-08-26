@@ -28,6 +28,9 @@ interface Props {
   highlightedPiece: number[]
 }
 
+/**
+ * Renders all of the pieces on the board
+ */
 const Pieces: React.FunctionComponent<Props> = ({
   pieces,
   handlePieceClick,

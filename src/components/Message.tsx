@@ -22,6 +22,9 @@ const MessageP = styled.p`
   margin-top: 2px;
 `
 
+/**
+ * Displays a message inside the chat log
+ */
 const Message:React.FunctionComponent<Props> = ({ message }: Props ) => {
   const playerText = message.player === 0 ? "You" : "Opponent";
   const date = new Date(message.time);

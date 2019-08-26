@@ -1,3 +1,8 @@
+/**
+ * testPieceArrays.ts
+ * Contains arrays of pieces to use for testing certain conditions without
+ * needing to play whole games.
+ */
 
 const startingState:number[][] = [
   [0, 0, 11, 11, 11, 11, 11, 16, 16, 16, 18, 18, 18, 18, 18],

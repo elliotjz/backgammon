@@ -35,6 +35,10 @@ interface Props {
   y: number,
   highlighted: boolean
 }
+
+/**
+ * Renders an SVG piece on the board
+ */
 const Piece: React.FunctionComponent<Props> = ({
   onClick,
   player, 

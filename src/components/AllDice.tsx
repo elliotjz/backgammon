@@ -6,6 +6,9 @@ interface Props {
   movesLeft: number[]
 }
 
+/**
+ * Renders SVG dice on the board
+ */
 const AllDice: React.FunctionComponent<Props> = ({ movesLeft }: Props) => {
   return (
     <g transform={`translate(${350 - 30 * movesLeft.length}, 220)`}>

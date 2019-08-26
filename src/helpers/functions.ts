@@ -5,17 +5,31 @@ const allPiecesAreInFinalQuad = (player: number, pieces: number[]) => {
   else return pieces.every(p => p < 6);
 }
 
-interface DiceNumbersI {
+/**
+ * Represents a dice numbers object
+ * Contains the dice rolled, and the moves that are left for the turn
+ */
+interface DiceNumbers {
   dice: number[],
   movesLeft: number[]
 }
 
-interface MoveOption {
+/**
+ * Represents a move that the player could make.
+ * piece is the piece that the player wants to move.
+ * toSpike is the spike that the player wants to move to.
+ */
+interface Move {
   piece: number,
   toSpike: number,
 }
 
-const getDiceNumbers = ():DiceNumbersI => {
+/**
+ * Creates two random dice numbers.
+ * @returns an object containing the dice rolled and the moves available
+ */
+const getDiceNumbers = ():DiceNumbers => {
+  // TODO: Make a call to the API to get the dice numbers instead of calculating on the client
   const getDiceNum = () => {
     return Math.ceil(Math.random() * 6);
   };
@@ -30,8 +44,12 @@ const getDiceNumbers = ():DiceNumbersI => {
   }
 }
 
-/*
+/**
  * Determines how many opponent pieces are on a spike
+ * @param pieces 2D array containing the state of the pieces
+ * @param player The player who is calling the function
+ * @param spikeNum The spike in question
+ * @returns The number of opponents on that spike
  */
 const opponentsOnSpike = (pieces:number[][], player:number, spikeNum:number):number => {
   if (spikeNum < 0 || spikeNum > 23) return 0;
@@ -40,8 +58,12 @@ const opponentsOnSpike = (pieces:number[][], player:number, spikeNum:number):num
   ), 0);
 }
 
-/*
+/**
  * Determines whether moving to a given spike will capture an opponent
+ * @param pieces 2D array containing the state of the pieces
+ * @param player The player who is calling the function
+ * @param spikeNum The spike in question
+ * @returns A boolean indicating whether moving to that spike will capture an opponent
  */
 const capturesOpponent = (pieces:number[][], player:number, spikeNum:number):boolean => {
   if (spikeNum < 0 || spikeNum > 23) return false;
@@ -49,24 +71,25 @@ const capturesOpponent = (pieces:number[][], player:number, spikeNum:number):boo
   return opp === 1;
 }
 
-/*
- * Determines whether a given spike is available to move to
+/**
+ * Determines whether a player is currently captured
+ * @param pieces 2D array containing the state of the pieces
+ * @param player The player who is calling the function
+ * @returns A boolean representing whether the player is captured
  */
-const spikeIsAvailable = (pieces:number[][], player:number, spikeNum:number):boolean => {
-  if (spikeNum < 0 || spikeNum > 23) return false;
-  const opp = opponentsOnSpike(pieces, player, spikeNum);
-  return opp < 2;
-}
-
 const playerIsCaptured = (pieces:number[][], player: number) => {
   const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
   return pieces[player].indexOf(capturedIndex) !== -1;
 }
 
-/*
+/**
  * Calculates whether a given move is valid
+ * @param pieces 2D array containing the state of the pieces
+ * @param player The player who is calling the function
+ * @param move The move in question
+ * @returns A boolean indicating whether the move is valid
  */
-const moveIsValid = (pieces:number[][], player:number, move:MoveOption):boolean => {
+const moveIsValid = (pieces:number[][], player:number, move:Move):boolean => {
   const home = player === ME ? ME_HOME : OPPONENT_HOME;
   const capturedIndex = player === ME ? OPPONENT_HOME : ME_HOME;
 
@@ -104,16 +127,20 @@ const moveIsValid = (pieces:number[][], player:number, move:MoveOption):boolean 
   return res;
 }
 
-/*
- * Returns an array of valid moves.
+/**
+ * Calculates an array of valid moves
+ * @param pieces 2D array containing the state of the pieces
+ * @param player The player who is calling the function
+ * @param movesLeft Array of moves that the player has available
+ * @returns An array of legal moves
  */
-const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): MoveOption[] => {
+const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): Move[] => {
   const uniqueMovesLeft = movesLeft.filter((move, i, self) => self.indexOf(move) === i);
-  const options:MoveOption[] = [];
+  const options:Move[] = [];
   pieces[player].forEach((pieceSpike, i) => {
     uniqueMovesLeft.forEach(move => {
       const toSpike = player === ME ? pieceSpike + move : pieceSpike - move;
-      const moveOption:MoveOption = { piece: i, toSpike };
+      const moveOption:Move = { piece: i, toSpike };
       if (moveIsValid(pieces, player, moveOption)) {
         options.push(moveOption);
       }
@@ -122,20 +149,20 @@ const getValidMoves = (pieces:number[][], player:number, movesLeft:number[]): Mo
   return options;
 }
 
-/*
- * Calculates whether a player has valid moves
+/**
+ * Calculates whether the player can move
+ * @param pieces 2D array containing the state of the pieces
+ * @param player The player who is calling the function
+ * @param movesLeft Array of moves that the player has available
+ * @returns A boolean representing whether the player can move or not
  */
 const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boolean => {
   return getValidMoves(pieces, player, movesLeft).length > 0;
 }
 
 export {
-  allPiecesAreInFinalQuad,
   getDiceNumbers,
-  opponentsOnSpike,
   capturesOpponent,
-  spikeIsAvailable,
+  playerCanMove,
   getValidMoves,
-  playerIsCaptured,
-  playerCanMove
 }
