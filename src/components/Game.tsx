@@ -72,8 +72,6 @@ interface StateI {
   gamePhase: number,
   myTurn: boolean,
   needsToRoll: boolean,
-  initialDice: number,
-  opponentInitialDice: number,
   dice: number[],
   movesLeft: number[],
   pieces: number[][],
@@ -89,10 +87,8 @@ class Game extends React.Component<PropsI, StateI> {
     gamePhase: NOT_STARTED,
     myTurn: true,
     needsToRoll: true,
-    initialDice: -1,
-    opponentInitialDice: -1,
     dice: [-1, -1],
-    movesLeft: [-1],
+    movesLeft: [-1, -1],
     pieces: almostFinished2,
     highlightedPiece: [-1, -1],
     highlightedSpikes: [],
@@ -104,7 +100,7 @@ class Game extends React.Component<PropsI, StateI> {
   /**
    * Starts a new game
    */
-  startGame = () => {
+  startInitialRollsPhase = () => {
     // TODO: Send a new-game or new-game message over socket
     this.setState({
       gamePhase: INITIAL_ROLLS,
@@ -117,32 +113,17 @@ class Game extends React.Component<PropsI, StateI> {
    */
   rollInitialDice = () => {
     // TODO: Send a roll-initial-dice message over socket
-    const { opponentInitialDice } = this.state;
-    if (opponentInitialDice === -1) {
+    const { movesLeft } = this.state;
+    const opponentNum = movesLeft[1];
+    if (opponentNum === -1) {
       this.setState({
-        initialDice: getDiceNumber(),
+        movesLeft: [5, -1],
       });
     } else {
-      const diceNum = getDiceNumber();
-      const myTurn = diceNum > opponentInitialDice;
-      const message1 = myTurn ? "You go first" : "Opponent goes first";
-      const message2 = myTurn ? "Your turn!" : "Opponent's turn";
-      this.setState({
-        initialDice: diceNum,
-        message: message1,
-      });
-      setTimeout(() => {
-        this.setState({
-          gamePhase: PLAY,
-          myTurn,
-          needsToRoll: false,
-          initialDice: -1,
-          opponentInitialDice: -1,
-          dice: [diceNum, opponentInitialDice],
-          movesLeft: [diceNum, opponentInitialDice],
-          message: message2,
-        });
-      }, 2000);
+      let diceNum = getDiceNumber();
+      // Keep getting new numbers until they are different
+      while (diceNum === opponentNum) diceNum = getDiceNumber();
+      this.startPlayPhase([diceNum, opponentNum]);
     }
   }
 
@@ -151,33 +132,37 @@ class Game extends React.Component<PropsI, StateI> {
    */
   rollOpponentInitialDice = () => {
     // TODO: Delete this as it will be handled by the server and other client
-    const { initialDice } = this.state;
-    if (initialDice === -1) {
+    const { movesLeft } = this.state;
+    const playerNum = movesLeft[0];
+    if (playerNum === -1) {
       this.setState({
-        opponentInitialDice: getDiceNumber(),
+        movesLeft: [-1, getDiceNumber()],
       });
     } else {
-      const opponentDiceNum = getDiceNumber();
-      const myTurn = initialDice > opponentDiceNum;
-      const message1 = myTurn ? "You go first" : "Opponent goes first";
-      const message2 = myTurn ? "Your turn!" : "Opponent's turn";
-      this.setState({
-        opponentInitialDice: opponentDiceNum,
-        message: message1,
-      });
-      setTimeout(() => {
-        this.setState({
-          gamePhase: PLAY,
-          myTurn,
-          needsToRoll: false,
-          initialDice: -1,
-          opponentInitialDice: -1,
-          dice: [initialDice, opponentDiceNum],
-          movesLeft: [initialDice, opponentDiceNum],
-          message: message2,
-        });
-      }, 2000);
+      let diceNum = 1;
+      // Keep getting new numbers until they are different
+      while (diceNum === playerNum) diceNum = getDiceNumber();
+      this.startPlayPhase([playerNum, diceNum]);
     }
+  }
+
+  startPlayPhase = (movesLeft: number[]) => {
+    const [myNum, opponentNum] = movesLeft;
+    const myTurn = myNum > opponentNum;
+    const message1 = myTurn ? "You go first" : "Opponent goes first";
+    const message2 = myTurn ? "Your turn" : "Opponent's turn";
+    this.setState({
+      movesLeft,
+      message: message1,
+    });
+    setTimeout(() => {
+      this.setState({
+        gamePhase: PLAY,
+        myTurn,
+        needsToRoll: false,
+        message: message2,
+      });
+    }, 2000);
   }
 
   /**
@@ -353,7 +338,7 @@ class Game extends React.Component<PropsI, StateI> {
       const { pieces, movesLeft } = this.state;
       const validMoves = getValidMoves(pieces, 1, movesLeft);
       if (validMoves.length === 0) {
-        this.setState({ message: "Opponent can't move." });
+        this.setState({ message: "Opponent can't move" });
         setTimeout(() => {
           this.startPlayersTurn();
         }, 2000);
@@ -378,7 +363,7 @@ class Game extends React.Component<PropsI, StateI> {
       highlightedSpikes: [],
       highlightedHome0: false,
       highlightedHome1: false,
-      message: "You move!",
+      message: "Your move",
     })
   }
 
@@ -413,8 +398,6 @@ class Game extends React.Component<PropsI, StateI> {
     const {
       gamePhase,
       pieces,
-      initialDice,
-      opponentInitialDice,
       movesLeft,
       myTurn,
       highlightedPiece,
@@ -431,21 +414,18 @@ class Game extends React.Component<PropsI, StateI> {
       <Container>
         <div className="board-container">
           <Board
-            gamePhase={gamePhase}
             pieces={pieces}
             handlePieceClick={this.handlePieceClick}
             handleSpikeClick={this.handleSpikeClick}
             highlightedPiece={highlightedPiece}
             highlightedSpikes={highlightedSpikes}
-            initialDice={initialDice}
-            opponentInitialDice={opponentInitialDice}
             movesLeft={movesLeft}
             highlightedHome0={highlightedHome0}
             highlightedHome1={highlightedHome1}
           />
           <GameStatus message={message} />
           {gamePhase === NOT_STARTED ? (
-            <Button handleClick={this.startGame} disabled={false} text="Start Game" />
+            <Button handleClick={this.startInitialRollsPhase} disabled={false} text="Start Game" />
           ) : (
             <>
               {gamePhase === INITIAL_ROLLS ? (
