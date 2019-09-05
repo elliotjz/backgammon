@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as io from 'socket.io-client';
 import styled from "styled-components";
 
 import Board from "./Board";
@@ -66,6 +67,12 @@ interface Move {
   toSpike: number,
 }
 
+interface MessageObject {
+  message: string,
+  player: string,
+  time: number,
+}
+
 interface PropsI {}
 
 interface StateI {
@@ -83,6 +90,7 @@ interface StateI {
 }
 
 class Game extends React.Component<PropsI, StateI> {
+  private socket: any;
   state = {
     gamePhase: NOT_STARTED,
     myTurn: true,
@@ -96,6 +104,7 @@ class Game extends React.Component<PropsI, StateI> {
     highlightedHome1: false,
     message: "",
   };
+
 
   /**
    * Starts a new game
@@ -400,6 +409,14 @@ class Game extends React.Component<PropsI, StateI> {
       result: playerWins || opponentWins,
       message
     }
+  }
+
+  componentDidMount() {
+    this.socket = io.connect('/');
+
+    this.socket.on('chat', (messageObj: MessageObject) => {
+      console.log(messageObj);
+    });
   }
 
   render() {
