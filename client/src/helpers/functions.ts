@@ -164,10 +164,17 @@ const playerCanMove = (pieces:number[][], player:number, movesLeft:number[]):boo
   return getValidMoves(pieces, player, movesLeft).length > 0;
 }
 
+const gameIsOver = (pieces: number[][]) => {
+  const piecesNotHome0 = pieces[0].filter(((p) => p !== ME_HOME));
+  const piecesNotHome1 = pieces[1].filter(((p) => p !== OPPONENT_HOME));
+  return piecesNotHome0.length === 0 || piecesNotHome1.length === 0;
+}
+
 export {
   getDiceNumber,
   getDiceNumbers,
   capturesOpponent,
   playerCanMove,
   getValidMoves,
+  gameIsOver,
 }

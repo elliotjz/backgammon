@@ -12,6 +12,7 @@ const OPPONENT = 1;
 const NOT_STARTED = 0;
 const INITIAL_ROLLS = 1;
 const PLAY = 2;
+const FINISHED = 3;
 
 export {
   ME_HOME,
@@ -21,4 +22,5 @@ export {
   NOT_STARTED,
   INITIAL_ROLLS,
   PLAY,
+  FINISHED,
 }

@@ -12,7 +12,8 @@ import {
   getDiceNumbers,
   capturesOpponent,
   playerCanMove,
-  getValidMoves
+  getValidMoves,
+  gameIsOver,
 } from '../helpers/functions'
 import {
   startingState,
@@ -28,6 +29,7 @@ import {
   NOT_STARTED,
   INITIAL_ROLLS,
   PLAY,
+  FINISHED,
 } from '../helpers/constants'
 import Chat from "./Chat";
 import Stats from "./Stats";
@@ -254,17 +256,9 @@ class Game extends React.Component<PropsI, StateI> {
     }
   }
 
-  isGameOver = () => {
-    const { pieces } = this.state;
-    const playerWins = pieces[0].every(p => p === ME_HOME);
-    const opponentWins = pieces[1].every(p => p === OPPONENT_HOME);
-    let message = "";
-    if (playerWins) message = "You Win! 😃";
-    if (opponentWins) message = "You Loose 😿"
-    return {
-      result: playerWins || opponentWins,
-      message
-    }
+  startNewGame = () => {
+    console.log('SOCKET emit: play-again');
+    this.socket.emit('play-again');
   }
 
   componentDidMount() {
@@ -314,15 +308,25 @@ class Game extends React.Component<PropsI, StateI> {
 
     this.socket.on('game-state', (gameState: GameStateMessageI) => {
       console.log('game-state');
+      console.log(gameState);
+      const finished = gameIsOver(gameState.pieces);
+      console.log(`finished: ${finished}`);
       this.setState({
         ...gameState,
-        gamePhase: PLAY,
+        gamePhase: finished ? FINISHED : PLAY,
         highlightedPiece: [-1, -1],
         highlightedSpikes: [],
         highlightedHome0: false,
         highlightedHome1: false,
       })
-      console.log(gameState);
+    });
+
+    this.socket.on('play-again', () => {
+      this.setState({
+        gamePhase: INITIAL_ROLLS,
+        message: "Roll the dice to see who goes first.",
+        pieces: startingState,
+      });
     });
   }
 
@@ -354,19 +358,18 @@ class Game extends React.Component<PropsI, StateI> {
             highlightedHome1={highlightedHome1}
           />
           <GameStatus message={message} />
-          {gamePhase === NOT_STARTED ? null: (
-            <>
-              {gamePhase === INITIAL_ROLLS ? (
-                <ButtonContainer>
-                  <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
-                </ButtonContainer>
-            ) : (
-              <ButtonContainer>
-                <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
-              </ButtonContainer>
+          <ButtonContainer>
+            {gamePhase === NOT_STARTED && null}
+            {gamePhase === INITIAL_ROLLS && (
+              <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
             )}
-            </>
-          )}
+            {gamePhase === PLAY && (
+              <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
+            )}
+            {gamePhase === FINISHED && (
+              <Button handleClick={this.startNewGame} disabled={false} text="Start New Game" />
+            )}
+          </ButtonContainer>
         </div>
         <div className="chat-container">
           <Chat />

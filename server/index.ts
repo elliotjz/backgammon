@@ -8,11 +8,11 @@ import {
   getDiceNumbers,
   capturesOpponent,
   playerCanMove,
-  getValidMoves,
   getUniqueCode,
   moveIsValid,
   convertToPlayer1Pieces,
   convertToPlayer1Move,
+  gameIsOver,
 } from './helpers/functions';
 import { startingState, startingPieces } from './helpers/boardStates';
 import { GameStateI, MoveI, GameStateMessageI, GameI } from './helpers/interfaces';
@@ -244,7 +244,16 @@ io.on('connection', (socket) => {
           let playerMessage;
           let oppMessage;
 
-          if (movesLeft.length === 0) {
+          if (gameIsOver(game.gameState.pieces)) {
+            console.log("GAME OVER");
+            playerMessage = "😀 You Win!!! 😀";
+            oppMessage = "😢 You loose 😢";
+            console.log('SOCKET emit: game-state');
+            socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+            const opponentId = player === 0 ? game.player1Id : game.player0Id;
+            console.log('SOCKET emit: game-state (other player)');
+            io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+          } else if (movesLeft.length === 0) {
             // Swap turns and update game
             game.gameState.dice = [-1, -1];
             game.gameState.movesLeft = [-1, -1];
@@ -368,6 +377,38 @@ io.on('connection', (socket) => {
 
   socket.on('play-again', () => {
     console.log('SOCKET: play-again');
+    // Initial dice rolls are pre-determined
+    const initialDice0 = getDiceNumber();
+    let initialDice1 = getDiceNumber();
+    // Keep rolling until the two dice are different
+    while(initialDice0 === initialDice1) {
+      initialDice1 = getDiceNumber();
+    }
+
+    // Construct the initial game state
+    const gameState: GameStateI = {
+      ...startingState,
+      gamePhase: INITIAL_ROLLS,
+      initialDice0,
+      initialDice1,
+      player0Turn: initialDice0 > initialDice1,
+      dice: [initialDice0, initialDice1],
+      movesLeft: [initialDice0, initialDice1],
+    }
+
+    // Deep copy of the pieces array
+    gameState.pieces = [Array.from(startingPieces[0]), Array.from(startingPieces[1])];
+
+    // Add the game state to volatile storage
+    const game = getGame(socket.id);
+    game.gameState = gameState;
+    updateGame(socket.id, game);
+    console.log('SOCKET emit: play-again');
+    socket.emit('play-again');
+    const player = game.player0Id === socket.id ? 0 : 1;
+    const opponentId = player === 0 ? game.player1Id : game.player0Id;
+    console.log('SOCKET emit: play-again');
+    io.to(opponentId).emit('play-again');
   });
 
   socket.on('chat', (message: string) => {

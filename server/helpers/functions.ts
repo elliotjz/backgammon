@@ -190,6 +190,12 @@ const convertToPlayer1Move = (m: MoveI):MoveI => {
   return { piece, toSpike };
 }
 
+const gameIsOver = (pieces:number[][]) => {
+  const piecesNotHome0 = pieces[0].filter(((p) => p !== PLAYER_0_HOME));
+  const piecesNotHome1 = pieces[1].filter(((p) => p !== PLAYER_1_HOME));
+  return piecesNotHome0.length === 0 || piecesNotHome1.length === 0;
+}
+
 export {
   getDiceNumber,
   getDiceNumbers,
@@ -200,4 +206,5 @@ export {
   moveIsValid,
   convertToPlayer1Pieces,
   convertToPlayer1Move,
+  gameIsOver,
 }
