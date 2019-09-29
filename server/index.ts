@@ -49,7 +49,7 @@ const updateGame = (id: string, newState: GameI) => {
   gamesBeingPlayed[index] = newState;
 }
 
-const gameStateToMessage = (game: GameI, player: number):GameStateMessageI => {
+const gameStateToMessage = (game: GameI, player: number, message:string):GameStateMessageI => {
   const { pieces } = game.gameState;
   return player === 0 ? {
     myTurn: game.gameState.player0Turn,
@@ -57,12 +57,14 @@ const gameStateToMessage = (game: GameI, player: number):GameStateMessageI => {
     dice: game.gameState.dice,
     movesLeft: game.gameState.movesLeft,
     pieces: pieces,
+    message,
   } : {
     myTurn: !game.gameState.player0Turn,
     needsToRoll: game.gameState.needsToRoll,
     dice: game.gameState.dice,
     movesLeft: game.gameState.movesLeft,
     pieces: convertToPlayer1Pieces(game.gameState.pieces),
+    message,
   }
 }
 
@@ -165,11 +167,13 @@ io.on('connection', (socket) => {
           if (opponentInitialDice < 0) {
             // Both players have rolled, so start the game
             game.gameState.gamePhase = PLAY;
+            const msg0 = game.gameState.player0Turn ? "Your turn" : "Opponent's turn";
+            const msg1 = game.gameState.player0Turn ? "Opponent's turn" : "Your turn";
             console.log('SOCKET emit: game-state');
-            socket.emit('game-state', gameStateToMessage(game, player));
+            socket.emit('game-state', gameStateToMessage(game, player, player === 0 ? msg0 : msg1));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
             console.log('SOCKET emit: game-state (other player)');
-            io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player));
+            io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, player === 0 ? msg1 : msg0));
           } else {
             // Waiting for other player to roll
             console.log('SOCKET emit: initial-dice');
@@ -237,23 +241,67 @@ io.on('connection', (socket) => {
           movesLeft.splice(indexOfMove, 1);
           game.gameState.movesLeft = movesLeft;
 
-          if (movesLeft.length === 0 ||
-            !playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
-            // Swap turns
+          let playerMessage;
+          let oppMessage;
+
+          if (movesLeft.length === 0) {
+            // Swap turns and update game
             game.gameState.dice = [-1, -1];
             game.gameState.movesLeft = [-1, -1];
             game.gameState.needsToRoll = true;
             game.gameState.player0Turn = player === 0 ? false : true;
+            updateGame(socket.id, game);
+
+            // Send updated game to clients
+            playerMessage = "Opponent's turn";
+            oppMessage = "Your turn";
+            console.log('SOCKET emit: game-state');
+            socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+            const opponentId = player === 0 ? game.player1Id : game.player0Id;
+            console.log('SOCKET emit: game-state (other player)');
+            io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+
+          } else if (!playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
+            // Send message to indicate forfeited moves
+            playerMessage = "⛔ No moves can be made. Forfeit your turn. ⛔";
+            oppMessage = "🎉 Opponent can't move. They forfeit their turn. 🎉";
+            console.log('SOCKET emit: game-state');
+            socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+            const opponentId = player === 0 ? game.player1Id : game.player0Id;
+            console.log('SOCKET emit: game-state (other player)');
+            io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+            
+            setTimeout(() => {
+              // Swap turns and update game
+              game.gameState.dice = [-1, -1];
+              game.gameState.movesLeft = [-1, -1];
+              game.gameState.needsToRoll = true;
+              game.gameState.player0Turn = player === 0 ? false : true;
+              updateGame(socket.id, game);
+
+              // Send updated game to clients
+              playerMessage = "Opponent's turn";
+              oppMessage = "Your turn";
+              console.log('SOCKET emit: game-state');
+              socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+              const opponentId = player === 0 ? game.player1Id : game.player0Id;
+              console.log('SOCKET emit: game-state (other player)');
+              io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+            }, 3000);
+
+          } else {
+            // Update game
+            updateGame(socket.id, game);
+
+            // Send updated game to clients
+            playerMessage = "Your turn";
+            oppMessage = "Opponent's turn";
+            console.log(`SOCKET emit: game-state`);
+            socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+            const opponentId = player === 0 ? game.player1Id : game.player0Id;
+            console.log('SOCKET emit: game-state (other player)');
+            io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           }
-
-          // Update the server state
-          updateGame(socket.id, game);
-
-          console.log(`SOCKET emit: game-state`);
-          socket.emit('game-state', gameStateToMessage(game, player));
-          const opponentId = player === 0 ? game.player1Id : game.player0Id;
-          console.log('SOCKET emit: game-state (other player)');
-          io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player));
         }
       }
     } catch (err) {
@@ -276,20 +324,45 @@ io.on('connection', (socket) => {
       game.gameState.needsToRoll = false;
       updateGame(socket.id, game);
 
-      if (!playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
-        // Change player turn
-        game.gameState.dice = [-1, -1];
-        game.gameState.movesLeft = [-1, -1];
-        game.gameState.needsToRoll = true;
-        game.gameState.player0Turn = player === 0 ? false : true;
-      }
+      let playerMessage;
+      let oppMessage;
 
-      // Send dice to client
-      console.log('SOCKET emit: game-state');
-      socket.emit('game-state', gameStateToMessage(game, player));
-      const opponentId = player === 0 ? game.player1Id : game.player0Id;
-      console.log('SOCKET emit: game-state (other player)');
-      io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player));
+      if (!playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
+        playerMessage = "⛔ No moves can be made. Forfeit your turn. ⛔";
+        oppMessage = "🎉 Opponent can't move. They forfeit their turn. 🎉";
+        console.log('SOCKET emit: game-state');
+        socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+        const opponentId = player === 0 ? game.player1Id : game.player0Id;
+        console.log('SOCKET emit: game-state (other player)');
+        io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+        
+        setTimeout(() => {
+          // Swap turns and update game
+          game.gameState.dice = [-1, -1];
+          game.gameState.movesLeft = [-1, -1];
+          game.gameState.needsToRoll = true;
+          game.gameState.player0Turn = player === 0 ? false : true;
+          updateGame(socket.id, game);
+
+          // Send updated game to clients
+          playerMessage = "Opponent's turn";
+          oppMessage = "Your turn";
+          console.log('SOCKET emit: game-state');
+          socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+          const opponentId = player === 0 ? game.player1Id : game.player0Id;
+          console.log('SOCKET emit: game-state (other player)');
+          io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+        }, 3000);
+      } else {
+        // Send dice to client
+        playerMessage = "Your turn";
+        oppMessage = "Opponent's turn";
+        console.log('SOCKET emit: game-state');
+        socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
+        const opponentId = player === 0 ? game.player1Id : game.player0Id;
+        console.log('SOCKET emit: game-state (other player)');
+        io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
+      }
     }
   });
 

@@ -20,6 +20,7 @@ interface GameStateMessageI {
   dice: number[],
   movesLeft: number[],
   pieces: number[][],
+  message: string,
 }
 
 interface GameI {
