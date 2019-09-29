@@ -9,11 +9,16 @@
     "socket.io": "^2.2.0"
   },
   "devDependencies": {
-    "nodemon": "^1.19.2"
+    "@types/express": "^4.17.1",
+    "@types/socket.io": "^2.1.2",
+    "nodemon": "^1.19.2",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.6.2"
   },
   "scripts": {
-    "start": "node server/index",
-    "develop": "nodemon server/index"
+    "start": "node dist/index",
+    "dev": "nodemon server/index.ts",
+    "build": "tsc -p ."
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "./server/dist/",
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es5",
+    "experimentalDecorators": true,
+    "noImplicitAny": true
+  },
+  "include": [
+    "./server/**/*"
+  ]
+}

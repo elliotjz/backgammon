@@ -1,3 +1,5 @@
+// TODO: Change @typescript dependencies to dev-dependencies
+
 import * as React from "react";
 import * as io from 'socket.io-client';
 import styled from "styled-components";
@@ -62,12 +64,20 @@ const ButtonContainer = styled.div`
   justify-content: center;
 `
 
-interface Move {
+interface MoveI {
   piece: number,
   toSpike: number,
 }
 
-interface MessageObject {
+interface GameStateMessageI {
+  myTurn: boolean,
+  needsToRoll: boolean,
+  dice: number[],
+  movesLeft: number[],
+  pieces: number[][],
+}
+
+interface ChatMessageI {
   message: string,
   player: string,
   time: number,
@@ -110,7 +120,6 @@ class Game extends React.Component<PropsI, StateI> {
    * Starts a new game
    */
   startInitialRollsPhase = () => {
-    // TODO: Send a new-game or new-game message over socket
     this.setState({
       gamePhase: INITIAL_ROLLS,
       message: "Roll the dice to see who goes first."
@@ -121,57 +130,8 @@ class Game extends React.Component<PropsI, StateI> {
    * Rolls the player's initial dice to decide who goes first
    */
   rollInitialDice = () => {
-    // TODO: Send a roll-initial-dice message over socket
-    const { movesLeft } = this.state;
-    const opponentNum = movesLeft[1];
-    if (opponentNum === -1) {
-      this.setState({
-        movesLeft: [getDiceNumber(), -1],
-      });
-    } else {
-      let diceNum = getDiceNumber();
-      // Keep getting new numbers until they are different
-      while (diceNum === opponentNum) diceNum = getDiceNumber();
-      this.startPlayPhase([diceNum, opponentNum]);
-    }
-  }
-
-  /**
-   * Temporary function to roll the opponent's initial dice to decide who goes first
-   */
-  rollOpponentInitialDice = () => {
-    // TODO: Delete this as it will be handled by the server and other client
-    const { movesLeft } = this.state;
-    const playerNum = movesLeft[0];
-    if (playerNum === -1) {
-      this.setState({
-        movesLeft: [-1, getDiceNumber()],
-      });
-    } else {
-      let diceNum = getDiceNumber();
-      // Keep getting new numbers until they are different
-      while (diceNum === playerNum) diceNum = getDiceNumber();
-      this.startPlayPhase([playerNum, diceNum]);
-    }
-  }
-
-  startPlayPhase = (movesLeft: number[]) => {
-    const [myNum, opponentNum] = movesLeft;
-    const myTurn = myNum > opponentNum;
-    const message1 = myTurn ? "You go first" : "Opponent goes first";
-    const message2 = myTurn ? "Your turn" : "Opponent's turn";
-    this.setState({
-      movesLeft,
-      message: message1,
-    });
-    setTimeout(() => {
-      this.setState({
-        gamePhase: PLAY,
-        myTurn,
-        needsToRoll: false,
-        message: message2,
-      });
-    }, 2000);
+    console.log('SOCKET emit: roll-initial-dice');
+    this.socket.emit('roll-initial-dice');
   }
 
   /**
@@ -185,7 +145,7 @@ class Game extends React.Component<PropsI, StateI> {
     const isMyChip = player === ME;
     if (myTurn && !needsToRoll && isMyChip) {
       // Highlight the spikes that the player can move to
-      const validMoves:Move[] = getValidMoves(pieces, 0, movesLeft)
+      const validMoves:MoveI[] = getValidMoves(pieces, 0, movesLeft)
         .filter(m => m.piece === pieceI);
       const validSpikes:number[] = validMoves.map(m => m.toSpike);
 
@@ -211,109 +171,29 @@ class Game extends React.Component<PropsI, StateI> {
    */
   handleSpikeClick = (spikeNum: number) => {
     const { highlightedPiece } = this.state;
-    this.movePiece(0, highlightedPiece[1], spikeNum);
+    this.movePiece(highlightedPiece[1], spikeNum);
   };
 
   /**
    * Moves a piece on the board
-   * @param player The player who is moving
    * @param piece the piece to move
    * @param soSpike the spike to move to
    */
-  movePiece = (player:number, piece:number, toSpike:number) => {
-    const { pieces, movesLeft, myTurn } = this.state;
-    const diceNumberUsed = player === ME ?
-      toSpike - pieces[player][piece] :
-      pieces[player][piece] - toSpike;
-    let indexOfMove = movesLeft.indexOf(diceNumberUsed);
-
-    // indexOfMove will be -1 if the number used is larger than the required
-    // mode. This will occur when moving pieces home at the end of the game.
-    let i = 1;
-    while (indexOfMove === -1) {
-      indexOfMove = movesLeft.indexOf(diceNumberUsed + i);
-      i++;
-    }
-    // TODO: Make a call to the API to move the piece
-    // TODO: The API will respond with the new board state
-
-    // Move the piece
-    let limitedToSpike = toSpike;
-    if (toSpike < -1) limitedToSpike = -1;
-    if (toSpike > 24) limitedToSpike = 24;
-    pieces[player][piece] = limitedToSpike;
-
-    // Check if a piece has been captured
-    if (capturesOpponent(pieces, player, toSpike)) {
-      const indexOfPiece = pieces[1 - player].indexOf(toSpike);
-      pieces[1 - player][indexOfPiece] = player === ME ? ME_HOME : OPPONENT_HOME;
-    }
-
-    // Update moves left
-    movesLeft.splice(indexOfMove, 1);
-
-    // Check if player wins
-    const { result, message } = this.isGameOver();
-    if (result) {
-      this.setState({
-        movesLeft: [-1],
-        highlightedPiece: [-1, -1],
-        highlightedSpikes: [],
-        highlightedHome0: false,
-        highlightedHome1: false,
-        message,
-      })
-      return;
-    }
-
-    if (movesLeft.length > 0) {
-      // Current player has moves left
-      this.setState({
-        pieces,
-        movesLeft,
-        highlightedPiece: [-1, -1],
-        highlightedSpikes: [],
-        highlightedHome0: false,
-        highlightedHome1: false,
-      }, () => {
-        if (myTurn) {
-          this.checkPlayerCanMove();
-        } else {
-          this.opponentsMove();
-        }
-      });
-    } else {
-      // No more moves. Change turn
-      if (myTurn) {
-        this.setState({ pieces }, () => {
-          setTimeout(() => {
-            this.startOpponentsTurn();
-          }, 2000);
-        })
-      } else {
-        this.setState({ pieces }, () => {  
-          setTimeout(() => {
-            this.startPlayersTurn();
-          }, 2000);
-        })
-      }
-    }
-  };
+  movePiece = (piece:number, toSpike:number) => {
+    console.log('SOCKET emit: move-piece');
+    this.socket.emit('move-piece', { piece, toSpike });
+  }
 
   /**
    * Gets random dice numbers
    */
   rollDice = () => {
-    // TODO: Get the dice from the server via socket
-    const { dice, movesLeft } = getDiceNumbers();
+    console.log('SOCKET emit: roll-dice');
+    this.socket.emit('roll-dice');
     this.setState({
-      dice,
-      movesLeft,
       needsToRoll: false
-    }, () => {
-      this.checkPlayerCanMove();
     });
-  };
+  }
 
   /**
    * Temporary function to roll the dice for the opponent
@@ -341,30 +221,6 @@ class Game extends React.Component<PropsI, StateI> {
       highlightedHome1: false,
       message: "Opponent's turn",
     });
-  }
-
-  /**
-   * Makes an automated move. It gets all available moves an selects on at random
-   */
-  opponentsMove = () => {
-    // TODO: Wait for websocket to send a message saying that the other player has moved.
-    // TODO: The server will check whether the move is valid, and will send an updated
-    // TODO: board state to the client.
-    // TODO: Hand control back to the player.
-    setTimeout(() => {
-      const { pieces, movesLeft } = this.state;
-      const validMoves = getValidMoves(pieces, 1, movesLeft);
-      if (validMoves.length === 0) {
-        this.setState({ message: "Opponent can't move" });
-        setTimeout(() => {
-          this.startPlayersTurn();
-        }, 2000);
-      } else {
-        const randomI = Math.floor(Math.random() * validMoves.length);
-        const chosenMove:Move = validMoves[randomI];
-        this.movePiece(1, chosenMove.piece, chosenMove.toSpike);
-      }
-    }, 1000);
   }
 
   /**
@@ -413,9 +269,60 @@ class Game extends React.Component<PropsI, StateI> {
 
   componentDidMount() {
     this.socket = io.connect('/');
+    const pathname = window.location.pathname;
+    if (pathname === '/') {
+      console.log('SOCKET emit: new-game');
+      this.socket.emit('new-game');
+    } else {
+      const code = pathname.substring(1);
+      console.log('SOCKET emit: join-game');
+      this.socket.emit('join-game', code);
+    }
 
-    this.socket.on('chat', (messageObj: MessageObject) => {
+    this.socket.on('unique-code', (code: string) => {
+      const message = `Your unique URL is http://localhost:3000/${code}. Send this to your friend to start the game.`;
+      this.setState({ message });
+    });
+
+    this.socket.on('error-message', (error: string) => {
+      console.log('error-message');
+      console.log(error);
+    });
+
+    this.socket.on('chat', (messageObj: ChatMessageI) => {
       console.log(messageObj);
+    });
+
+    this.socket.on('start-game', () => {
+      console.log('start-game');
+      this.startInitialRollsPhase();
+    });
+
+    this.socket.on('initial-dice', (dice: number) => {
+      console.log('initial-dice');
+      this.setState({
+        movesLeft: [dice, -1],
+      });
+    });
+
+    this.socket.on('opponent-initial-dice', (dice: number) => {
+      console.log('opponent-initial-dice');
+      this.setState({
+        movesLeft: [-1, dice],
+      });
+    });
+
+    this.socket.on('game-state', (gameState: GameStateMessageI) => {
+      console.log('game-state');
+      this.setState({
+        ...gameState,
+        gamePhase: PLAY,
+        highlightedPiece: [-1, -1],
+        highlightedSpikes: [],
+        highlightedHome0: false,
+        highlightedHome1: false,
+      })
+      console.log(gameState);
     });
   }
 
@@ -433,8 +340,6 @@ class Game extends React.Component<PropsI, StateI> {
       message,
     } = this.state;
     const rollDiceBtnDisabled = !myTurn || !needsToRoll;
-    const computerRollBtnDisabled = myTurn || !needsToRoll;
-    const computerMoveBtnDisabled = myTurn || needsToRoll;
     return (
       <Container>
         <div className="board-container">
@@ -449,20 +354,15 @@ class Game extends React.Component<PropsI, StateI> {
             highlightedHome1={highlightedHome1}
           />
           <GameStatus message={message} />
-          {gamePhase === NOT_STARTED ? (
-            <Button handleClick={this.startInitialRollsPhase} disabled={false} text="Start Game" />
-          ) : (
+          {gamePhase === NOT_STARTED ? null: (
             <>
               {gamePhase === INITIAL_ROLLS ? (
                 <ButtonContainer>
-                <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
-                <Button handleClick={this.rollOpponentInitialDice} disabled={false} text="Computer Roll Dice" />
-              </ButtonContainer>
+                  <Button handleClick={this.rollInitialDice} disabled={false} text="Roll Dice" />
+                </ButtonContainer>
             ) : (
               <ButtonContainer>
                 <Button handleClick={this.rollDice} disabled={rollDiceBtnDisabled} text="Roll Dice" />
-                <Button handleClick={this.opponentRollDice} disabled={computerRollBtnDisabled} text="Trigger computer roll" />
-                <Button handleClick={this.opponentsMove} disabled={computerMoveBtnDisabled} text="Trigger computer move" />
               </ButtonContainer>
             )}
             </>
