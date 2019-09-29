@@ -14,14 +14,14 @@ import {
   convertToPlayer1Pieces,
   convertToPlayer1Move,
 } from './helpers/functions';
-import { startingState } from './helpers/boardStates';
+import { startingState, startingPieces } from './helpers/boardStates';
 import { GameStateI, MoveI, GameStateMessageI, GameI } from './helpers/interfaces';
 import {
   PLAYER_0_HOME,
   PLAYER_1_HOME,
   WAITING_FOR_OPPONENT,
   INITIAL_ROLLS,
-  PLAY
+  PLAY,
 } from './helpers/constants';
 
 const app = express();
@@ -41,7 +41,6 @@ const getGame = (id: string):GameI => {
   if (index < 0) {
     throw new Error("Game not found");
   }
-  console.log(`Game index: ${index}`);
   return gamesBeingPlayed[index];
 }
 
@@ -81,6 +80,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('new-game', () => {
+    console.log(`ID = ${socket.id}`);
     console.log('SOCKET: new game');
     const code = getUniqueCode();
     console.log('SOCKET emit: unique-code');
@@ -93,6 +93,8 @@ io.on('connection', (socket) => {
     while(initialDice0 === initialDice1) {
       initialDice1 = getDiceNumber();
     }
+
+    // Construct the initial game state
     const gameState: GameStateI = {
       ...startingState,
       initialDice0,
@@ -101,6 +103,11 @@ io.on('connection', (socket) => {
       dice: [initialDice0, initialDice1],
       movesLeft: [initialDice0, initialDice1],
     }
+
+    // Deep copy of the pieces array
+    gameState.pieces = [Array.from(startingPieces[0]), Array.from(startingPieces[1])];
+
+    // Add the game state to volatile storage
     gamesBeingPlayed.push({
       player0Id: socket.id,
       player1Id: '',
@@ -111,6 +118,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-game', (code) => {
+    console.log(`ID = ${socket.id}`);
     console.log('SOCKET: join-game');
     const index = gamesBeingPlayed.findIndex(g => g.uniqueCode === code);
     if (index === -1 || gamesBeingPlayed[index].gameState.gamePhase !== WAITING_FOR_OPPONENT) {
@@ -240,7 +248,7 @@ io.on('connection', (socket) => {
           // Update the server state
           updateGame(socket.id, game);
 
-          console.log('SOCKET emit: game-state');
+          console.log(`SOCKET emit: game-state`);
           socket.emit('game-state', gameStateToMessage(game, player));
           const opponentId = player === 0 ? game.player1Id : game.player0Id;
           console.log('SOCKET emit: game-state (other player)');

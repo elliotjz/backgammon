@@ -1,6 +1,11 @@
 import { WAITING_FOR_OPPONENT, INITIAL_ROLLS, PLAY } from './constants';
 import { GameStateI } from './interfaces';
 
+const startingPieces:number[][] = [
+  [0, 0, 11, 11, 11, 11, 11, 16, 16, 16, 18, 18, 18, 18, 18],
+  [5, 5, 5, 5, 5, 7, 7, 7, 12, 12, 12, 12, 12, 23, 23]
+];
+
 const startingState:GameStateI = {
   gamePhase: WAITING_FOR_OPPONENT,
   player0Turn: true,
@@ -9,10 +14,7 @@ const startingState:GameStateI = {
   initialDice1: -1,
   dice: [-1, -1],
   movesLeft: [-1, -1],
-  pieces: [
-    [0, 0, 11, 11, 11, 11, 11, 16, 16, 16, 18, 18, 18, 18, 18],
-    [5, 5, 5, 5, 5, 7, 7, 7, 12, 12, 12, 12, 12, 23, 23]
-  ],
+  pieces: startingPieces,
 };
 
 const capturedTest:number[][] = [
@@ -35,4 +37,4 @@ const almostFinished2:number[][] = [
   [-1, -1, -1, -1, -1, -1, -1, 0, 0, -1, -1, -1, -1, -1, -1]
 ]
 
-export { startingState, capturedTest, allInEndQuad, almostFinished, almostFinished2 }
+export { startingState, startingPieces, capturedTest, allInEndQuad, almostFinished, almostFinished2 }
