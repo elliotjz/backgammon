@@ -237,8 +237,9 @@ io.on('connection', (socket) => {
           movesLeft.splice(indexOfMove, 1);
           game.gameState.movesLeft = movesLeft;
 
-          // If the turn is over, change the game state
-          if (movesLeft.length === 0) {
+          if (movesLeft.length === 0 ||
+            !playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
+            // Swap turns
             game.gameState.dice = [-1, -1];
             game.gameState.movesLeft = [-1, -1];
             game.gameState.needsToRoll = true;
@@ -274,6 +275,14 @@ io.on('connection', (socket) => {
       game.gameState.movesLeft = diceNumbers.movesLeft;
       game.gameState.needsToRoll = false;
       updateGame(socket.id, game);
+
+      if (!playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
+        // Change player turn
+        game.gameState.dice = [-1, -1];
+        game.gameState.movesLeft = [-1, -1];
+        game.gameState.needsToRoll = true;
+        game.gameState.player0Turn = player === 0 ? false : true;
+      }
 
       // Send dice to client
       console.log('SOCKET emit: game-state');
