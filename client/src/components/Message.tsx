@@ -43,14 +43,10 @@ const Message:React.FunctionComponent<Props> = ({ message }: Props ) => {
   const minutesText = minutes < 10 ? `0${minutes}` : minutes;
   const AmPm = hours > 0 && hours < 12 ? "AM" : "PM";
   const timeText = `${hoursText}:${minutesText} ${AmPm}`;
-  
-  const pathname = window.location.pathname;
-  const player = pathname === '/' ? 0 : 1;
-  const me = player === message.player;
-  const playerText = me ? "You" : "Opponent";
+  const playerText = message.me ? "You" : "Opponent";
   return (
     <StyledP>
-      <span className={me ? "right" : "left"}>
+      <span className={message.me ? "right" : "left"}>
         <small>
         {playerText} {timeText}
         </small>

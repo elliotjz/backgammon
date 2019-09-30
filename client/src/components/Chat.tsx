@@ -65,7 +65,7 @@ class Chat extends React.Component<PropsI, StateI> {
     const player = pathname === '/' ? 0 : 1;
     if (inputText !== "") {
       addNewMessage({
-        player,
+        me: true,
         date: new Date().getTime(),
         message: inputText,
       });

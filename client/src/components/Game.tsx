@@ -288,12 +288,15 @@ class Game extends React.Component<PropsI, StateI> {
       })
     });
 
-    this.socket.on('chat', (message: ChatMessageI) => {
+    this.socket.on('chat', (message: string) => {
       console.log('chat');
       const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
-      chatMessages.push(message)
-      console.log(`chat message:`);
-      console.log(message);
+      const chatMessage:ChatMessageI = {
+        me: false,
+        date: new Date().getTime(),
+        message,
+      }
+      chatMessages.push(chatMessage)
       this.setState({ chatMessages });
     });
 

@@ -458,13 +458,8 @@ io.on('connection', (socket) => {
       const game = getGame(socket.id);
       const player = game.player0Id === socket.id ? 0 : 1;
       const opponentId = player === 0 ? game.player1Id : game.player0Id;
-      const chatMessage:ChatMessageI = {
-        message,
-        player,
-        date: new Date().getTime(),
-      }
       console.log('SOCKET emit: chat');
-      io.to(opponentId).emit('chat', chatMessage);
+      io.to(opponentId).emit('chat', message);
     } catch (err) {
       console.log('Error receiving chat');
       console.error(err);

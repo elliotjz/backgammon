@@ -1,7 +1,7 @@
 
 interface ChatMessageI {
   message: string,
-  player: number,
+  me: boolean,
   date: number,
 }
 
