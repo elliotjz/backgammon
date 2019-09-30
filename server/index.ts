@@ -15,7 +15,7 @@ import {
   gameIsOver,
 } from './helpers/functions';
 import { startingState, startingPieces } from './helpers/boardStates';
-import { GameStateI, MoveI, GameStateMessageI, GameI } from './helpers/interfaces';
+import { GameStateI, MoveI, GameStateMessageI, GameI, ChatMessageI } from './helpers/interfaces';
 import {
   PLAYER_0_HOME,
   PLAYER_1_HOME,
@@ -412,7 +412,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('chat', (message: string) => {
-    console.log(message);
+    console.log('SOCKET: chat');
+    const game = getGame(socket.id);
+    const player = game.player0Id === socket.id ? 0 : 1;
+    const opponentId = player === 0 ? game.player1Id : game.player0Id;
+    const chatMessage:ChatMessageI = {
+      message,
+      player,
+      date: new Date().getTime(),
+    }
+    console.log('SOCKET emit: chat');
+    io.to(opponentId).emit('chat', chatMessage);
   });
 });
 

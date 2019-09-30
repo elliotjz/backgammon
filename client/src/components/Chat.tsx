@@ -3,21 +3,7 @@ import styled from 'styled-components'
 
 import Message from './Message'
 import ChatForm from './ChatForm'
-import Button from './Button';
-
-interface MessageObject {
-  player: number,
-  time: number,
-  message: string,
-}
-
-// Messages for the computer to send
-const cannedAnswers = [
-  "Why did you move there?",
-  "That was an awful move, you're stuffed.",
-  "Play again after this?",
-  "Heck!",
-]
+import { ChatMessageI } from '../helpers/interfaces';
 
 const Container = styled.div`
   height: 500px;
@@ -46,12 +32,20 @@ const Container = styled.div`
   }
 `
 
+interface PropsI {
+  messages: ChatMessageI[],
+  addNewMessage(message: ChatMessageI): void,
+}
+
+interface StateI {
+  inputText: string,
+}
+
 /**
  * Renders and controls the chat functions of the game
  */
-class Chat extends React.Component {
+class Chat extends React.Component<PropsI, StateI> {
   state = {
-    messages: [],
     inputText: "",
   }
 
@@ -65,49 +59,36 @@ class Chat extends React.Component {
 
   handleMessageSend = (event: any) => {
     event.preventDefault();
+    const { addNewMessage } = this.props;
     const { inputText } = this.state;
+    const pathname = window.location.pathname;
+    const player = pathname === '/' ? 0 : 1;
     if (inputText !== "") {
-      this.addMessage({
-        player: 0,
-        time: new Date().getTime(),
-        message: inputText
+      addNewMessage({
+        player,
+        date: new Date().getTime(),
+        message: inputText,
       });
+      this.setState({ inputText: '' });
     }
   }
 
-  handleComputerMessage = () => {
-    const { messages } = this.state;
-    const message = cannedAnswers[Math.floor(Math.random() * cannedAnswers.length)];
-    this.addMessage({
-      player: 1,
-      time: new Date().getTime(),
-      message,
-    });
-    this.setState({ messages });
-  }
-
-  addMessage = (message: MessageObject) => {
-    const { messages }: { messages: MessageObject[] } = this.state;
-    messages.push(message);
-    this.setState({
-      messages,
-      inputText: "",
-    }, () => {
-      const div = this.messageContRef.current;
-      if (div) {
-        div.scrollTop = div.scrollHeight;
-      }
-    })
+  componentDidUpdate() {
+    const div = this.messageContRef.current;
+    if (div) {
+      div.scrollTop = div.scrollHeight;
+    }
   }
 
   render() {
-    const { messages, inputText }: { messages: MessageObject[], inputText: string } = this.state;
+    const { inputText }: { inputText: string } = this.state;
+    const { messages }: { messages: ChatMessageI[] } = this.props;
     return (
       <Container>
         <h3>Chat</h3>
         <div>
           <div className="message-div" ref={this.messageContRef} >
-            {messages.map(m => <Message key={m.time} message={m} />)}
+            {messages.map(m => <Message key={m.date} message={m} />)}
           </div>
           <ChatForm
             handleMessageSend={this.handleMessageSend}
@@ -115,7 +96,6 @@ class Chat extends React.Component {
             handleChange={this.handleChange}
           />
         </div>
-        <Button handleClick={this.handleComputerMessage} disabled={false} text="Send Opponent Message" />
       </Container>
     );
   }

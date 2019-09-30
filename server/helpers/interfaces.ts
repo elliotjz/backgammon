@@ -30,4 +30,10 @@ interface GameI {
   gameState: GameStateI,
 }
 
-export { MoveI, GameStateI, GameStateMessageI, GameI };
+interface ChatMessageI {
+  message: string,
+  player: number,
+  date: number,
+}
+
+export { MoveI, GameStateI, GameStateMessageI, GameI, ChatMessageI };

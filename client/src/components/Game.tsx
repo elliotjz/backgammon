@@ -31,6 +31,7 @@ import {
   PLAY,
   FINISHED,
 } from '../helpers/constants'
+import { ChatMessageI } from '../helpers/interfaces';
 import Chat from "./Chat";
 import Stats from "./Stats";
 
@@ -79,12 +80,6 @@ interface GameStateMessageI {
   pieces: number[][],
 }
 
-interface ChatMessageI {
-  message: string,
-  player: string,
-  time: number,
-}
-
 interface PropsI {}
 
 interface StateI {
@@ -99,6 +94,7 @@ interface StateI {
   highlightedHome0: boolean,
   highlightedHome1: boolean,
   message: string,
+  chatMessages: ChatMessageI[],
 }
 
 class Game extends React.Component<PropsI, StateI> {
@@ -115,6 +111,7 @@ class Game extends React.Component<PropsI, StateI> {
     highlightedHome0: false,
     highlightedHome1: false,
     message: "",
+    chatMessages: [],
   };
 
 
@@ -261,6 +258,14 @@ class Game extends React.Component<PropsI, StateI> {
     this.socket.emit('play-again');
   }
 
+  sendChatMessage = (message: ChatMessageI) => {
+    const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
+    chatMessages.push(message);
+    console.log('SOCKET emit: chat');
+    this.socket.emit('chat', message.message);
+    this.setState({ chatMessages });
+  }
+
   componentDidMount() {
     this.socket = io.connect('/');
     const pathname = window.location.pathname;
@@ -283,8 +288,13 @@ class Game extends React.Component<PropsI, StateI> {
       console.log(error);
     });
 
-    this.socket.on('chat', (messageObj: ChatMessageI) => {
-      console.log(messageObj);
+    this.socket.on('chat', (message: ChatMessageI) => {
+      console.log('chat');
+      const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
+      chatMessages.push(message)
+      console.log(`chat message:`);
+      console.log(message);
+      this.setState({ chatMessages });
     });
 
     this.socket.on('start-game', () => {
@@ -342,6 +352,7 @@ class Game extends React.Component<PropsI, StateI> {
       highlightedHome1,
       needsToRoll,
       message,
+      chatMessages,
     } = this.state;
     const rollDiceBtnDisabled = !myTurn || !needsToRoll;
     return (
@@ -372,7 +383,7 @@ class Game extends React.Component<PropsI, StateI> {
           </ButtonContainer>
         </div>
         <div className="chat-container">
-          <Chat />
+          <Chat messages={chatMessages} addNewMessage={this.sendChatMessage} />
         </div>
         <div className="stats-container">
           <Stats />

@@ -1,14 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
-
-interface MessageObject {
-  player: number,
-  time: number,
-  message: String,
-}
+import { ChatMessageI } from '../helpers/interfaces';
 
 interface Props {
-  message: MessageObject,
+  message: ChatMessageI,
 }
 
 const StyledP = styled.p`
@@ -41,17 +36,21 @@ const StyledP = styled.p`
  * Displays a message inside the chat log
  */
 const Message:React.FunctionComponent<Props> = ({ message }: Props ) => {
-  const playerText = message.player === 0 ? "You" : "Opponent";
-  const date = new Date(message.time);
+  const date = new Date(message.date);
   const hours = date.getHours();
   const hoursText = hours % 12 === 0 ? 12 : hours % 12;
   const minutes = date.getMinutes();
   const minutesText = minutes < 10 ? `0${minutes}` : minutes;
   const AmPm = hours > 0 && hours < 12 ? "AM" : "PM";
   const timeText = `${hoursText}:${minutesText} ${AmPm}`;
+  
+  const pathname = window.location.pathname;
+  const player = pathname === '/' ? 0 : 1;
+  const me = player === message.player;
+  const playerText = me ? "You" : "Opponent";
   return (
     <StyledP>
-      <span className={message.player === 0 ? "right" : "left"}>
+      <span className={me ? "right" : "left"}>
         <small>
         {playerText} {timeText}
         </small>
