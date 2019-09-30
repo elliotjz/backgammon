@@ -68,7 +68,9 @@ const gameStateToMessage = (game: GameI, player: number, message:string):GameSta
   }
 }
 
-app.use(express.static(path.resolve(__dirname, '../client')));
+const clientDir = process.env.NODE_ENV === 'development' ? '../client' : '../../client';
+
+app.use(express.static(path.resolve(__dirname, clientDir)));
 
 app.get('/start-game', (req, res) => {
   const code0 = getUniqueCode();
@@ -110,7 +112,7 @@ app.get('/start-game', (req, res) => {
 });
 
 app.get('/*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client', 'index.html'));
+  res.sendFile(path.resolve(__dirname, clientDir, 'index.html'));
 });
 
 io.on('connection', (socket) => {

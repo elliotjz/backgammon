@@ -16,9 +16,10 @@
     "typescript": "^3.6.2"
   },
   "scripts": {
-    "start": "node dist/index",
-    "dev": "nodemon server/index.ts",
-    "build": "tsc -p . && cd client && npm install --dev && npm run build"
+    "start": "node server/dist/index",
+    "dev": "NODE_ENV=development nodemon server/index.ts",
+    "build": "tsc -p .",
+    "heroku-postbuild": "tsc -p . && cd client && npm install --dev && npm run build" 
   },
   "repository": {
     "type": "git",
