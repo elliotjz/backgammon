@@ -15,7 +15,7 @@ const Container = styled.div`
 class StartScreen extends React.Component {
   startGame = async () => {
     try {
-      const http = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+      const http = window.location.host === 'localhost:3000' ? 'http' : 'https';
       const url= `${http}://${window.location.host}/start-game`;
       const res = await fetch(url);
       const resJson = await res.json();

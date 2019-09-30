@@ -275,7 +275,7 @@ class Game extends React.Component<PropsI, StateI> {
 
     this.socket.on('join-code', (code: string) => {
       console.log('join-code');
-      const http = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+      const http = window.location.host === 'localhost:3000' ? 'http' : 'https';
       const url= `${http}://${window.location.host}/${code}`;
       const message = `Send your friend to the URL: ${url}`;
       this.setState({ message });
@@ -290,7 +290,6 @@ class Game extends React.Component<PropsI, StateI> {
 
     this.socket.on('chat', (message: ChatMessageI) => {
       console.log('chat');
-      console.log(message);
       const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
       chatMessages.push(message)
       console.log(`chat message:`);
