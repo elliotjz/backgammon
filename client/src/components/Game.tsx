@@ -269,23 +269,21 @@ class Game extends React.Component<PropsI, StateI> {
   componentDidMount() {
     this.socket = io.connect('/');
     const pathname = window.location.pathname;
-    if (pathname === '/') {
-      console.log('SOCKET emit: new-game');
-      this.socket.emit('new-game');
-    } else {
-      const code = pathname.substring(1);
-      console.log('SOCKET emit: join-game');
-      this.socket.emit('join-game', code);
-    }
+    const code = pathname.substring(1);
+    console.log('SOCKET emit: join-game');
+    this.socket.emit('join-game', code);
 
-    this.socket.on('unique-code', (code: string) => {
-      const message = `Your unique URL is http://localhost:3000/${code}. Send this to your friend to start the game.`;
+    this.socket.on('join-code', (code: string) => {
+      console.log('join-code');
+      const message = `Send your friend to the URL: http://localhost:3000/${code}`;
       this.setState({ message });
     });
 
     this.socket.on('error-message', (error: string) => {
       console.log('error-message');
-      console.log(error);
+      this.setState({
+        message: error,
+      })
     });
 
     this.socket.on('chat', (message: ChatMessageI) => {

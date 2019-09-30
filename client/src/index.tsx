@@ -3,11 +3,11 @@ import * as ReactDOM from "react-dom";
 import { ThemeProvider } from 'styled-components'
 
 import { theme } from './theme'
-import Game from './components/Game';
+import App from './App';
 
 ReactDOM.render(
   <ThemeProvider theme={theme}>
-    <Game />
+    <App />
   </ThemeProvider>,
   document.getElementById("app")
 );
