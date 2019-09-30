@@ -275,7 +275,8 @@ class Game extends React.Component<PropsI, StateI> {
 
     this.socket.on('join-code', (code: string) => {
       console.log('join-code');
-      const message = `Send your friend to the URL: http://localhost:3000/${code}`;
+      const url= `https://${window.location.host}/${code}`;
+      const message = `Send your friend to the URL: ${url}`;
       this.setState({ message });
     });
 

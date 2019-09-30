@@ -474,5 +474,5 @@ io.on('connection', (socket) => {
 
 const port = process.env.PORT || 3000;
 server.listen(port, function(){
-  console.log(`listening at http://localhost:${port}`);
+  console.log(`listening on port ${port}`);
 });
