@@ -15,10 +15,10 @@ const Container = styled.div`
 class StartScreen extends React.Component {
   startGame = async () => {
     try {
-      const url= `http://${window.location.host}/start-game`;
+      const url= `https://${window.location.host}/start-game`;
       const res = await fetch(url);
       const resJson = await res.json();
-      const uniqueURL = `http://${window.location.host}/${resJson.code}`;
+      const uniqueURL = `https://${window.location.host}/${resJson.code}`;
       window.location.replace(uniqueURL);
     } catch (err) {
       console.error(err);
