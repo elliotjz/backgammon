@@ -8,20 +8,12 @@ import Board from "./Board";
 import GameStatus from "./GameStatus";
 import Button from "./Button";
 import {
-  getDiceNumber,
   getDiceNumbers,
-  capturesOpponent,
   playerCanMove,
   getValidMoves,
   gameIsOver,
 } from '../helpers/functions'
-import {
-  startingState,
-  capturedTest,
-  allInEndQuad,
-  almostFinished,
-  almostFinished2
-} from '../helpers/testPiceArrays'
+import { startingState } from '../helpers/testPiceArrays'
 import {
   ME_HOME,
   OPPONENT_HOME,
@@ -380,6 +372,7 @@ class Game extends React.Component<PropsI, StateI> {
     const rollDiceBtnDisabled = !myTurn || !needsToRoll;
     const needsToSetName = myName === '';
     const opponentNeedsToSetName = opponentName === '';
+    console.log(`myTurn: ${myTurn}, needsToRoll: ${needsToRoll}`);
     return (
       <Container>
         <div className="board-container">
@@ -394,8 +387,12 @@ class Game extends React.Component<PropsI, StateI> {
             highlightedHome1={highlightedHome1}
           />
           <GameStatus message={message} />
-          {needsToSetName && <GameStatus message="Set your name in the chat window my typing /setname John" />}
-          {opponentNeedsToSetName && <GameStatus message="Waiting for the opponent to set their name" />}
+          {gamePhase === NOT_STARTED &&
+            <>
+              {needsToSetName && <GameStatus message="Set your name in the chat window my typing /setname John" />}
+              {opponentNeedsToSetName && <GameStatus message="Waiting for the opponent to set their name" />}
+            </>
+          }
           <ButtonContainer>
             {gamePhase === NOT_STARTED && null}
             {gamePhase === INITIAL_ROLLS && (

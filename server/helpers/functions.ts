@@ -1,5 +1,5 @@
 import { PLAYER_0_HOME, PLAYER_1_HOME } from './constants'
-import { MoveI } from './interfaces';
+import { MoveI, GameI, GameStateMessageI } from './interfaces';
 
 const allPiecesAreInFinalQuad = (player: number, pieces: number[]) => {
   if (player === 0) return pieces.every(p => p > 17);
@@ -196,6 +196,25 @@ const gameIsOver = (pieces:number[][]) => {
   return piecesNotHome0.length === 0 || piecesNotHome1.length === 0;
 }
 
+const gameStateToMessage = (game: GameI, player: number, message:string):GameStateMessageI => {
+  const { pieces } = game.gameState;
+  return player === 0 ? {
+    myTurn: game.gameState.player0Turn,
+    needsToRoll: game.gameState.needsToRoll,
+    dice: game.gameState.dice,
+    movesLeft: game.gameState.movesLeft,
+    pieces: pieces,
+    message,
+  } : {
+    myTurn: !game.gameState.player0Turn,
+    needsToRoll: game.gameState.needsToRoll,
+    dice: game.gameState.dice,
+    movesLeft: game.gameState.movesLeft,
+    pieces: convertToPlayer1Pieces(game.gameState.pieces),
+    message,
+  }
+}
+
 export {
   getDiceNumber,
   getDiceNumbers,
@@ -207,4 +226,5 @@ export {
   convertToPlayer1Pieces,
   convertToPlayer1Move,
   gameIsOver,
+  gameStateToMessage,
 }

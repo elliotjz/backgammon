@@ -2,6 +2,8 @@ import * as express from 'express';
 import * as http from 'http';
 import * as path from 'path';
 import * as socketIo from 'socket.io';
+import * as mongoose from 'mongoose';
+import * as env from 'dotenv';
 
 import {
   getDiceNumber,
@@ -13,6 +15,7 @@ import {
   convertToPlayer1Pieces,
   convertToPlayer1Move,
   gameIsOver,
+  gameStateToMessage,
 } from './helpers/functions';
 import { startingState, startingPieces } from './helpers/boardStates';
 import { GameStateI, MoveI, GameStateMessageI, GameI } from './helpers/interfaces';
@@ -23,11 +26,24 @@ import {
   INITIAL_ROLLS,
   PLAY,
 } from './helpers/constants';
+import GameModel from './models/gameModel';
 
+// Setup environment variables
+env.config({ path: '.env' });
+
+// Setup server and socket
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+console.log(`Secret: ${process.env.APP_SECRET}`);
+// Setup database
+const pw = process.env.DB_PW;
+const user = process.env.DB_USER;
+mongoose.connect(`mongodb://${user}:${pw}@ds113626.mlab.com:13626/backgammon`, () => {
+  console.log('Connected to database');
+});
 
+// Volatile storage of games
 const gamesBeingPlayed:GameI[] = [];
 
 const getGameIndex = (id: string) => (
@@ -42,25 +58,6 @@ const getGame = (id: string):GameI => {
     throw new Error("Game not found");
   }
   return gamesBeingPlayed[index];
-}
-
-const gameStateToMessage = (game: GameI, player: number, message:string):GameStateMessageI => {
-  const { pieces } = game.gameState;
-  return player === 0 ? {
-    myTurn: game.gameState.player0Turn,
-    needsToRoll: game.gameState.needsToRoll,
-    dice: game.gameState.dice,
-    movesLeft: game.gameState.movesLeft,
-    pieces: pieces,
-    message,
-  } : {
-    myTurn: !game.gameState.player0Turn,
-    needsToRoll: game.gameState.needsToRoll,
-    dice: game.gameState.dice,
-    movesLeft: game.gameState.movesLeft,
-    pieces: convertToPlayer1Pieces(game.gameState.pieces),
-    message,
-  }
 }
 
 const clientDir = process.env.NODE_ENV === 'development' ? '../client' : '../../client';
@@ -103,8 +100,6 @@ app.get('/start-game', (req, res) => {
     gameState,
   });
 
-  console.log(`Number of games being played = ${gamesBeingPlayed.length}`);
-
   res.status(200).json({ code: code0 });
 });
 
@@ -112,74 +107,119 @@ app.get('/*', (req, res) => {
   res.sendFile(path.resolve(__dirname, clientDir, 'index.html'));
 });
 
+// Handling for socket messages
 io.on('connection', (socket) => {
+  const rejoinGame = (index: number, code: string) => {
+    const game = gamesBeingPlayed[index];
+    if (game.uniqueCode0 === code) {
+      // Player 0 has joined
+      game.player0Id = socket.id;
+  
+      if (game.gameState.gamePhase === WAITING_FOR_NAMES) {
+        // Send the other player1 code
+        console.log('SOCKET emit: join-code');
+        socket.emit('join-code', game.uniqueCode1);
+      } else {
+        // Re-join the game
+        console.log('SOCKET emit: game-state');
+        socket.emit('game-state', gameStateToMessage(game, 0, "You've re-joined the game"));
+      }
+    } else {
+      // Player 1 has joined
+      game.player1Id = socket.id;
+  
+      if (game.gameState.gamePhase !== WAITING_FOR_NAMES) {
+        // Re-join the game
+        console.log('SOCKET emit: game-state');
+        socket.emit('game-state', gameStateToMessage(game, 1, "You've re-joined the game"));
+      }
+    }
+  }
+
   socket.on('disconnect', () => {
     console.log('SOCKET: disconnect');
-    console.log(`Number of games being played = ${gamesBeingPlayed.length}`);
-    // TODO: Delete game if the host disconnects
+    // Save the game on the database so they can come back to it later
+    try {
+      const game = getGame(socket.id);
+      GameModel.findOne({ uniqueCode0: game.uniqueCode0 }, (err, savedGame) => {
+        if (err) console.log(err);
+        else if (savedGame) {
+          // Update the game
+          GameModel.findOneAndUpdate({ uniqueCode0: game.uniqueCode0 }, game, (err2) => {
+            if (err2) console.log(err2);
+            else console.log('successfully updated the game');
+          });
+        } else {
+          // Create the game
+          new GameModel(game).save((err2) => {
+            if (err2) console.log(err2); 
+            else console.log('saved');
+          });
+        }
+      });
+    } catch (err) {
+      console.log(err);
+    }
   });
 
   socket.on('join-game', (code: string) => {
     console.log(`ID = ${socket.id}`);
     console.log('SOCKET: join-game');
-    const index = gamesBeingPlayed.findIndex(g => (
+    let index = gamesBeingPlayed.findIndex(g => (
       g.uniqueCode0 === code || g.uniqueCode1 === code
     ));
-    if (index === -1) {
-      console.log(`No game found with the code ${code}`);
+    if (index !== -1) {
+      rejoinGame(index, code);
     } else {
-      const game = gamesBeingPlayed[index];
-      if (game.uniqueCode0 === code) {
-        // Player 0 has joined
-        game.player0Id = socket.id;
-
-        if (game.gameState.gamePhase === WAITING_FOR_NAMES) {
-          // Send the other player1 code
-          console.log('SOCKET emit: join-code');
-          socket.emit('join-code', game.uniqueCode1);
+      // No game found in volatile memory
+      // Search for game in database
+      console.log('Game not found in volatile memory');
+      GameModel.findOne({
+        $or: [{ uniqueCode0: code }, {uniqueCode1: code }]
+      }, (err, savedGame) => {
+        if (err) console.log(err);
+        else if (!savedGame) {
+          console.log('No Game found with this unique code');
         } else {
-          // Re-join the game
-          console.log('SOCKET emit: game-state');
-          socket.emit('game-state', gameStateToMessage(game, 0, "You've re-joined the game"));
+          // Found game in database
+          console.log('Found Game in database');
+          index = gamesBeingPlayed.length;
+          gamesBeingPlayed.push(savedGame);
+          rejoinGame(index, code);
         }
-      } else {
-        // Player 1 has joined
-        game.player1Id = socket.id;
-
-        if (game.gameState.gamePhase !== WAITING_FOR_NAMES) {
-          // Re-join the game
-          console.log('SOCKET emit: game-state');
-          socket.emit('game-state', gameStateToMessage(game, 1, "You've re-joined the game"));
-        }
-      }
+      });
     }
   });
 
   socket.on('set-name', (name: string) => {
     console.log('SOCKET: set-name');
-    const game = getGame(socket.id);
-    const player = game.player0Id === socket.id ? 0 : 1;
-    let bothNamesSet: boolean;
-    if (player === 0) {
-      game.name0 = name;
+    try {
+      const game = getGame(socket.id);
+      const player = game.player0Id === socket.id ? 0 : 1;
+      let bothNamesSet: boolean;
+      if (player === 0) {
+        game.name0 = name;
 
-      bothNamesSet = game.name1 !== '';
-    } else {
-      game.name1 = name;
-      bothNamesSet = game.name0 !== '';
-    }
+        bothNamesSet = game.name1 !== '';
+      } else {
+        game.name1 = name;
+        bothNamesSet = game.name0 !== '';
+      }
 
-    // Send the name to the opponent
-    const opponentId = player === 0 ? game.player1Id : game.player0Id;
-    io.to(opponentId).emit('opponent-name', name);
+      // Send the name to the opponent
+      const opponentId = player === 0 ? game.player1Id : game.player0Id;
+      io.to(opponentId).emit('opponent-name', name);
 
-    if (bothNamesSet) {
-      // Start the game
-      game.gameState.gamePhase = INITIAL_ROLLS;
-      console.log('SOCKET emit: start-game');
-      socket.emit('start-game');
-      console.log('SOCKET emit: start-game');
-      io.to(opponentId).emit('start-game');
+      if (bothNamesSet) {
+        // Start the game
+        game.gameState.gamePhase = INITIAL_ROLLS;
+        console.log('SOCKET emit: start-game');
+        socket.emit('start-game');
+        console.log('SOCKET emit: start-game');
+        io.to(opponentId).emit('start-game');
+      }
+    } catch (err) {
+      console.log(err);
     }
   })
 
