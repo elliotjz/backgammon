@@ -10,15 +10,13 @@ import {
   getDiceNumbers,
   capturesOpponent,
   playerCanMove,
-  getUniqueCode,
   moveIsValid,
-  convertToPlayer1Pieces,
   convertToPlayer1Move,
   gameIsOver,
   gameStateToMessage,
 } from './helpers/functions';
 import { startingState, startingPieces } from './helpers/boardStates';
-import { GameStateI, MoveI, GameStateMessageI, GameI } from './helpers/interfaces';
+import { GameStateI, MoveI, GameI } from './helpers/interfaces';
 import {
   PLAYER_0_HOME,
   PLAYER_1_HOME,
@@ -26,6 +24,7 @@ import {
   INITIAL_ROLLS,
   PLAY,
 } from './helpers/constants';
+import apiRoutes from './apiRoutes';
 import GameModel from './models/gameModel';
 
 // Setup environment variables
@@ -44,8 +43,20 @@ mongoose.connect(`mongodb://${user}:${pw}@ds113626.mlab.com:13626/backgammon`, (
 });
 
 // Volatile storage of games
-const gamesBeingPlayed:GameI[] = [];
-
+export const gamesBeingPlayed:GameI[] = [];
+// Fake game data
+/* [
+  {"player0Id":"w74cQ-oLGsZ-n9vKAAAC","player1Id":"","name0":"","name1":"","uniqueCode0":"ngry8ffinr","uniqueCode1":"16zarp16fc",
+    "gameState":{"gamePhase":0,"player0Turn":false,"needsToRoll":false,"initialDice0":4,"initialDice1":5,"dice":[4,5],"movesLeft":[4,5],
+      "pieces":[[0,0,11,11,11,11,11,16,16,16,18,18,18,18,18],[5,5,5,5,5,7,7,7,12,12,12,12,12,23,23]]}},
+  {"player0Id":"FPkAI2NOA2P2vG5mAAAD","player1Id":"KJG8Q1iDyebOKTwGAAAE","name0":"Elliot","name1":"Sam","uniqueCode0":"s0tj4l030i","uniqueCode1":"is8aq5tdif",
+    "gameState":{"gamePhase":2,"player0Turn":true,"needsToRoll":true,"initialDice0":-1,"initialDice1":-1,"dice":[-1,-1],"movesLeft":[-1,-1],"pieces":
+      [[0,11,11,11,15,15,14,16,16,20,22,22,19,19,20],[1,4,4,5,5,1,7,7,24,12,12,12,12,12,17]]}},
+  {"player0Id":"GhI3qAIeW7rjIx3SAAAF","player1Id":"7S4qpu6ofz9N1gwdAAAG","name0":"John","name1":"setname","uniqueCode0":"jxzg8mtuea","uniqueCode1":"nzkj3mh1pc",
+    "gameState":{"gamePhase":2,"player0Turn":false,"needsToRoll":true,"initialDice0":-1,"initialDice1":-1,"dice":[-1,-1],"movesLeft":[-1,-1],
+      "pieces":[[0,0,11,11,11,11,17,16,16,17,18,18,18,18,18],[5,5,5,5,5,7,7,7,12,12,12,12,12,23,23]]}}
+];
+ */
 const getGameIndex = (id: string) => (
   gamesBeingPlayed.findIndex(g => (
     g.player0Id === id || g.player1Id === id
@@ -64,44 +75,7 @@ const clientDir = process.env.NODE_ENV === 'development' ? '../client' : '../../
 
 app.use(express.static(path.resolve(__dirname, clientDir)));
 
-app.get('/start-game', (req, res) => {
-  const code0 = getUniqueCode();
-  const code1 = getUniqueCode();
-
-  // Initial dice rolls are pre-determined
-  const initialDice0 = getDiceNumber();
-  let initialDice1 = getDiceNumber();
-  // Keep rolling until the two dice are different
-  while(initialDice0 === initialDice1) {
-    initialDice1 = getDiceNumber();
-  }
-
-  // Construct the initial game state
-  const gameState: GameStateI = {
-    ...startingState,
-    initialDice0,
-    initialDice1,
-    player0Turn: initialDice0 > initialDice1,
-    dice: [initialDice0, initialDice1],
-    movesLeft: [initialDice0, initialDice1],
-  }
-
-  // Deep copy of the pieces array
-  gameState.pieces = [Array.from(startingPieces[0]), Array.from(startingPieces[1])];
-
-  // Add the game state to volatile storage
-  gamesBeingPlayed.push({
-    player0Id: '',
-    player1Id: '',
-    name0: '',
-    name1: '',
-    uniqueCode0: code0,
-    uniqueCode1: code1,
-    gameState,
-  });
-
-  res.status(200).json({ code: code0 });
-});
+app.use('/api', apiRoutes);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.resolve(__dirname, clientDir, 'index.html'));
