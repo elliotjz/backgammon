@@ -15,7 +15,7 @@ import {
   gameIsOver,
 } from './helpers/functions';
 import { startingState, startingPieces } from './helpers/boardStates';
-import { GameStateI, MoveI, GameStateMessageI, GameI, ChatMessageI } from './helpers/interfaces';
+import { GameStateI, MoveI, GameStateMessageI, GameI } from './helpers/interfaces';
 import {
   PLAYER_0_HOME,
   PLAYER_1_HOME,
@@ -23,7 +23,6 @@ import {
   INITIAL_ROLLS,
   PLAY,
 } from './helpers/constants';
-import { stringify } from 'querystring';
 
 const app = express();
 const server = http.createServer(app);
@@ -43,11 +42,6 @@ const getGame = (id: string):GameI => {
     throw new Error("Game not found");
   }
   return gamesBeingPlayed[index];
-}
-
-const updateGame = (id: string, newState: GameI) => {
-  const index = getGameIndex(id);
-  gamesBeingPlayed[index] = newState;
 }
 
 const gameStateToMessage = (game: GameI, player: number, message:string):GameStateMessageI => {
@@ -187,7 +181,6 @@ io.on('connection', (socket) => {
       console.log('SOCKET emit: start-game');
       io.to(opponentId).emit('start-game');
     }
-    // updateGame();
   })
 
   socket.on('roll-initial-dice', () => {
@@ -217,7 +210,6 @@ io.on('connection', (socket) => {
           console.log('SOCKET emit: error');
           socket.emit('error', 'You have already rolled');
         } else {
-          // updateGame(socket.id, game);
           if (opponentInitialDice < 0) {
             // Both players have rolled, so start the game
             game.gameState.gamePhase = PLAY;
@@ -309,12 +301,11 @@ io.on('connection', (socket) => {
             console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           } else if (movesLeft.length === 0) {
-            // Swap turns and update game
+            // Swap turns
             game.gameState.dice = [-1, -1];
             game.gameState.movesLeft = [-1, -1];
             game.gameState.needsToRoll = true;
             game.gameState.player0Turn = player === 0 ? false : true;
-            // updateGame(socket.id, game);
 
             // Send updated game to clients
             playerMessage = `${player === 0 ? game.name1 : game.name0}'s turn`;
@@ -336,12 +327,11 @@ io.on('connection', (socket) => {
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
             
             setTimeout(() => {
-              // Swap turns and update game
+              // Swap turns
               game.gameState.dice = [-1, -1];
               game.gameState.movesLeft = [-1, -1];
               game.gameState.needsToRoll = true;
               game.gameState.player0Turn = player === 0 ? false : true;
-              // updateGame(socket.id, game);
 
               // Send updated game to clients
               playerMessage = `${player === 0 ? game.name1 : game.name0}'s turn`;
@@ -354,9 +344,7 @@ io.on('connection', (socket) => {
             }, 3000);
 
           } else {
-            // Update game
-            // updateGame(socket.id, game);
-
+            // It's still the player's turn. Let them move again
             // Send updated game to clients
             playerMessage = "Your turn";
             oppMessage = `${player === 0 ? game.name0 : game.name1}'s turn`;
@@ -388,7 +376,6 @@ io.on('connection', (socket) => {
         game.gameState.dice = diceNumbers.dice;
         game.gameState.movesLeft = diceNumbers.movesLeft;
         game.gameState.needsToRoll = false;
-        // updateGame(socket.id, game);
 
         let playerMessage;
         let oppMessage;
@@ -403,12 +390,11 @@ io.on('connection', (socket) => {
           io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           
           setTimeout(() => {
-            // Swap turns and update game
+            // Swap turns
             game.gameState.dice = [-1, -1];
             game.gameState.movesLeft = [-1, -1];
             game.gameState.needsToRoll = true;
             game.gameState.player0Turn = player === 0 ? false : true;
-            // updateGame(socket.id, game);
 
             // Send updated game to clients
             playerMessage = `${player === 0 ? game.name1 : game.name0}'s turn`;
@@ -464,7 +450,7 @@ io.on('connection', (socket) => {
       // Add the game state to volatile storage
       const game = getGame(socket.id);
       game.gameState = gameState;
-      // updateGame(socket.id, game);
+
       console.log('SOCKET emit: play-again');
       socket.emit('play-again');
       const player = game.player0Id === socket.id ? 0 : 1;
