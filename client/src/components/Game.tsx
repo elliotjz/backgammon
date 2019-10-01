@@ -95,6 +95,8 @@ interface StateI {
   highlightedHome1: boolean,
   message: string,
   chatMessages: ChatMessageI[],
+  myName: string,
+  opponentName: string,
 }
 
 class Game extends React.Component<PropsI, StateI> {
@@ -112,6 +114,8 @@ class Game extends React.Component<PropsI, StateI> {
     highlightedHome1: false,
     message: "",
     chatMessages: [],
+    myName: '',
+    opponentName: '',
   };
 
 
@@ -259,11 +263,20 @@ class Game extends React.Component<PropsI, StateI> {
   }
 
   sendChatMessage = (message: ChatMessageI) => {
-    const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
-    chatMessages.push(message);
-    console.log('SOCKET emit: chat');
-    this.socket.emit('chat', message.message);
-    this.setState({ chatMessages });
+    if (message.message.substring(0, 8) === '/setname') {
+      // Set the player's name
+      const name = message.message.substring(8).trim();
+      console.log('SOCKET emit: set-name');
+      this.socket.emit('set-name', name);
+      this.setState({ myName: name });
+    } else {
+      // Send the chat message
+      const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
+      chatMessages.push(message);
+      console.log('SOCKET emit: chat');
+      this.socket.emit('chat', message.message);
+      this.setState({ chatMessages });
+    }
   }
 
   componentDidMount() {
@@ -298,6 +311,11 @@ class Game extends React.Component<PropsI, StateI> {
       }
       chatMessages.push(chatMessage)
       this.setState({ chatMessages });
+    });
+
+    this.socket.on('opponent-name', (name: string) => {
+      console.log('opponent-name');
+      this.setState({ opponentName: name });
     });
 
     this.socket.on('start-game', () => {
@@ -356,8 +374,12 @@ class Game extends React.Component<PropsI, StateI> {
       needsToRoll,
       message,
       chatMessages,
+      myName,
+      opponentName,
     } = this.state;
     const rollDiceBtnDisabled = !myTurn || !needsToRoll;
+    const needsToSetName = myName === '';
+    const opponentNeedsToSetName = opponentName === '';
     return (
       <Container>
         <div className="board-container">
@@ -372,6 +394,8 @@ class Game extends React.Component<PropsI, StateI> {
             highlightedHome1={highlightedHome1}
           />
           <GameStatus message={message} />
+          {needsToSetName && <GameStatus message="Set your name in the chat window my typing /setname John" />}
+          {opponentNeedsToSetName && <GameStatus message="Waiting for the opponent to set their name" />}
           <ButtonContainer>
             {gamePhase === NOT_STARTED && null}
             {gamePhase === INITIAL_ROLLS && (
@@ -386,7 +410,12 @@ class Game extends React.Component<PropsI, StateI> {
           </ButtonContainer>
         </div>
         <div className="chat-container">
-          <Chat messages={chatMessages} addNewMessage={this.sendChatMessage} />
+          <Chat
+            messages={chatMessages}
+            addNewMessage={this.sendChatMessage}
+            myName={myName}
+            opponentName={opponentName}
+          />
         </div>
         <div className="stats-container">
           <Stats />

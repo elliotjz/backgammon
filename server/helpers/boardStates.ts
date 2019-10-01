@@ -1,4 +1,4 @@
-import { WAITING_FOR_OPPONENT, INITIAL_ROLLS, PLAY } from './constants';
+import { WAITING_FOR_NAMES, INITIAL_ROLLS, PLAY } from './constants';
 import { GameStateI } from './interfaces';
 
 const startingPieces:number[][] = [
@@ -7,7 +7,7 @@ const startingPieces:number[][] = [
 ];
 
 const startingState:GameStateI = {
-  gamePhase: WAITING_FOR_OPPONENT,
+  gamePhase: WAITING_FOR_NAMES,
   player0Turn: true,
   needsToRoll: false,
   initialDice0: -1,

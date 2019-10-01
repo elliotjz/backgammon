@@ -26,6 +26,8 @@ interface GameStateMessageI {
 interface GameI {
   player0Id: string,
   player1Id: string,
+  name0: string,
+  name1: string,
   uniqueCode0: string,
   uniqueCode1: string,
   gameState: GameStateI,

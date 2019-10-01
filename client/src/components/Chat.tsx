@@ -35,6 +35,8 @@ const Container = styled.div`
 interface PropsI {
   messages: ChatMessageI[],
   addNewMessage(message: ChatMessageI): void,
+  myName: string,
+  opponentName: string,
 }
 
 interface StateI {
@@ -61,8 +63,6 @@ class Chat extends React.Component<PropsI, StateI> {
     event.preventDefault();
     const { addNewMessage } = this.props;
     const { inputText } = this.state;
-    const pathname = window.location.pathname;
-    const player = pathname === '/' ? 0 : 1;
     if (inputText !== "") {
       addNewMessage({
         me: true,
@@ -82,13 +82,16 @@ class Chat extends React.Component<PropsI, StateI> {
 
   render() {
     const { inputText }: { inputText: string } = this.state;
-    const { messages }: { messages: ChatMessageI[] } = this.props;
+    const { messages, myName, opponentName }:
+      { messages: ChatMessageI[], myName: string, opponentName: string } = this.props;
     return (
       <Container>
         <h3>Chat</h3>
         <div>
           <div className="message-div" ref={this.messageContRef} >
-            {messages.map(m => <Message key={m.date} message={m} />)}
+            {messages.map(m => (
+              <Message key={m.date} message={m} name={m.me ? myName : opponentName}/>
+            ))}
           </div>
           <ChatForm
             handleMessageSend={this.handleMessageSend}
