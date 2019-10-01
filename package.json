@@ -21,8 +21,7 @@
   "scripts": {
     "start": "node server/dist/index",
     "dev": "NODE_ENV=development nodemon server/index.ts",
-    "build": "tsc -p .",
-    "heroku-postbuild": "tsc -p . && cd client && npm install --dev && npm run build"
+    "build": "tsc -p . && cd client && npm install --dev && npm run build"
   },
   "repository": {
     "type": "git",
