@@ -125,7 +125,6 @@ class Game extends React.Component<PropsI, StateI> {
    * Rolls the player's initial dice to decide who goes first
    */
   rollInitialDice = () => {
-    console.log('SOCKET emit: roll-initial-dice');
     this.socket.emit('roll-initial-dice');
   }
 
@@ -175,7 +174,6 @@ class Game extends React.Component<PropsI, StateI> {
    * @param soSpike the spike to move to
    */
   movePiece = (piece:number, toSpike:number) => {
-    console.log('SOCKET emit: move-piece');
     this.socket.emit('move-piece', { piece, toSpike });
   }
 
@@ -183,7 +181,6 @@ class Game extends React.Component<PropsI, StateI> {
    * Gets random dice numbers
    */
   rollDice = () => {
-    console.log('SOCKET emit: roll-dice');
     this.socket.emit('roll-dice');
     this.setState({
       needsToRoll: false
@@ -250,7 +247,6 @@ class Game extends React.Component<PropsI, StateI> {
   }
 
   startNewGame = () => {
-    console.log('SOCKET emit: play-again');
     this.socket.emit('play-again');
   }
 
@@ -258,14 +254,12 @@ class Game extends React.Component<PropsI, StateI> {
     if (message.message.substring(0, 8) === '/setname') {
       // Set the player's name
       const name = message.message.substring(8).trim();
-      console.log('SOCKET emit: set-name');
       this.socket.emit('set-name', name);
       this.setState({ myName: name });
     } else {
       // Send the chat message
       const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
       chatMessages.push(message);
-      console.log('SOCKET emit: chat');
       this.socket.emit('chat', message.message);
       this.setState({ chatMessages });
     }
@@ -275,11 +269,9 @@ class Game extends React.Component<PropsI, StateI> {
     this.socket = io.connect('/');
     const pathname = window.location.pathname;
     const code = pathname.substring(1);
-    console.log('SOCKET emit: join-game');
     this.socket.emit('join-game', code);
 
     this.socket.on('join-code', (code: string) => {
-      console.log('join-code');
       const http = window.location.host === 'localhost:3000' ? 'http' : 'https';
       const url= `${http}://${window.location.host}/${code}`;
       const message = `Send your friend to the URL: ${url}`;
@@ -287,14 +279,12 @@ class Game extends React.Component<PropsI, StateI> {
     });
 
     this.socket.on('error-message', (error: string) => {
-      console.log('error-message');
       this.setState({
         message: error,
       })
     });
 
     this.socket.on('chat', (message: string) => {
-      console.log('chat');
       const { chatMessages }: { chatMessages: ChatMessageI[] } = this.state;
       const chatMessage:ChatMessageI = {
         me: false,
@@ -306,34 +296,27 @@ class Game extends React.Component<PropsI, StateI> {
     });
 
     this.socket.on('opponent-name', (name: string) => {
-      console.log('opponent-name');
       this.setState({ opponentName: name });
     });
 
     this.socket.on('start-game', () => {
-      console.log('start-game');
       this.startInitialRollsPhase();
     });
 
     this.socket.on('initial-dice', (dice: number) => {
-      console.log('initial-dice');
       this.setState({
         movesLeft: [dice, -1],
       });
     });
 
     this.socket.on('opponent-initial-dice', (dice: number) => {
-      console.log('opponent-initial-dice');
       this.setState({
         movesLeft: [-1, dice],
       });
     });
 
     this.socket.on('game-state', (gameState: GameStateMessageI) => {
-      console.log('game-state');
-      console.log(gameState);
       const finished = gameIsOver(gameState.pieces);
-      console.log(`finished: ${finished}`);
       this.setState({
         ...gameState,
         gamePhase: finished ? FINISHED : PLAY,
@@ -372,7 +355,6 @@ class Game extends React.Component<PropsI, StateI> {
     const rollDiceBtnDisabled = !myTurn || !needsToRoll;
     const needsToSetName = myName === '';
     const opponentNeedsToSetName = opponentName === '';
-    console.log(`myTurn: ${myTurn}, needsToRoll: ${needsToRoll}`);
     return (
       <Container>
         <div className="board-container">

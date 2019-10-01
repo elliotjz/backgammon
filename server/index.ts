@@ -34,7 +34,6 @@ env.config({ path: '.env' });
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-console.log(`Secret: ${process.env.APP_SECRET}`);
 // Setup database
 const pw = process.env.DB_PW;
 const user = process.env.DB_USER;
@@ -79,11 +78,9 @@ io.on('connection', (socket) => {
   
       if (game.gameState.gamePhase === WAITING_FOR_NAMES) {
         // Send the other player1 code
-        console.log('SOCKET emit: join-code');
         socket.emit('join-code', game.uniqueCode1);
       } else {
         // Re-join the game
-        console.log('SOCKET emit: game-state');
         socket.emit('game-state', gameStateToMessage(game, 0, "You've re-joined the game"));
       }
     } else {
@@ -92,14 +89,12 @@ io.on('connection', (socket) => {
   
       if (game.gameState.gamePhase !== WAITING_FOR_NAMES) {
         // Re-join the game
-        console.log('SOCKET emit: game-state');
         socket.emit('game-state', gameStateToMessage(game, 1, "You've re-joined the game"));
       }
     }
   }
 
   socket.on('disconnect', () => {
-    console.log('SOCKET: disconnect');
     // Save the game on the database so they can come back to it later
     try {
       const game = getGame(socket.id);
@@ -115,7 +110,7 @@ io.on('connection', (socket) => {
           // Create the game
           new GameModel(game).save((err2) => {
             if (err2) console.log(err2); 
-            else console.log('saved');
+            else console.log('Game saved');
           });
         }
       });
@@ -125,8 +120,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-game', (code: string) => {
-    console.log(`ID = ${socket.id}`);
-    console.log('SOCKET: join-game');
     let index = gamesBeingPlayed.findIndex(g => (
       g.uniqueCode0 === code || g.uniqueCode1 === code
     ));
@@ -135,7 +128,6 @@ io.on('connection', (socket) => {
     } else {
       // No game found in volatile memory
       // Search for game in database
-      console.log('Game not found in volatile memory');
       GameModel.findOne({
         $or: [{ uniqueCode0: code }, {uniqueCode1: code }]
       }, (err, savedGame) => {
@@ -144,7 +136,6 @@ io.on('connection', (socket) => {
           console.log('No Game found with this unique code');
         } else {
           // Found game in database
-          console.log('Found Game in database');
           index = gamesBeingPlayed.length;
           gamesBeingPlayed.push(savedGame);
           rejoinGame(index, code);
@@ -154,7 +145,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('set-name', (name: string) => {
-    console.log('SOCKET: set-name');
     try {
       const game = getGame(socket.id);
       const player = game.player0Id === socket.id ? 0 : 1;
@@ -175,9 +165,7 @@ io.on('connection', (socket) => {
       if (bothNamesSet) {
         // Start the game
         game.gameState.gamePhase = INITIAL_ROLLS;
-        console.log('SOCKET emit: start-game');
         socket.emit('start-game');
-        console.log('SOCKET emit: start-game');
         io.to(opponentId).emit('start-game');
       }
     } catch (err) {
@@ -186,7 +174,6 @@ io.on('connection', (socket) => {
   })
 
   socket.on('roll-initial-dice', () => {
-    console.log('SOCKET: roll-initial-dice');
     try {
       const game = getGame(socket.id);
       if (game.gameState.gamePhase === INITIAL_ROLLS) {
@@ -209,7 +196,6 @@ io.on('connection', (socket) => {
         }
 
         if (initialDice < 0) {
-          console.log('SOCKET emit: error');
           socket.emit('error', 'You have already rolled');
         } else {
           if (opponentInitialDice < 0) {
@@ -217,16 +203,12 @@ io.on('connection', (socket) => {
             game.gameState.gamePhase = PLAY;
             const msg0 = game.gameState.player0Turn ? "Your turn" : `${game.name1}'s turn`;
             const msg1 = game.gameState.player0Turn ? `${game.name0}'s turn` : "Your turn";
-            console.log('SOCKET emit: game-state');
             socket.emit('game-state', gameStateToMessage(game, player, player === 0 ? msg0 : msg1));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
-            console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, player === 0 ? msg1 : msg0));
           } else {
             // Waiting for other player to roll
-            console.log('SOCKET emit: initial-dice');
             socket.emit('initial-dice', initialDice);
-            console.log('SOCKET emit: opponent-initial-dice');
             io.to(opponentId).emit('opponent-initial-dice', initialDice);
           }        
         }
@@ -238,19 +220,16 @@ io.on('connection', (socket) => {
   });
 
   socket.on('move-piece', (m: MoveI) => {
-    console.log('SOCKET: move-piece');
     try {
       const game = getGame(socket.id);
       const player = game.player0Id === socket.id ? 0 : 1;
       const turn = game.gameState.player0Turn ? 0 : 1;
       if (player !== turn) {
         // Player tried to play out of turn
-        console.log('SOCKET emit: error');
         socket.emit('error', 'Not your turn');
       } else {
         const move = player === 0 ? m : convertToPlayer1Move(m);
         if (!moveIsValid(game.gameState.pieces, player, move)) {
-          console.log('SOCKET emit: error');
           socket.emit('error', 'Move is not valid');
         } else {
           let diceNumberUsed: number;
@@ -272,11 +251,6 @@ io.on('connection', (socket) => {
           let limitedToSpike = move.toSpike;
           if (move.toSpike < -1) limitedToSpike = -1;
           if (move.toSpike > 24) limitedToSpike = 24;
-          if (limitedToSpike !== move.toSpike) {
-            console.log("WOW! Limited toSpoke !== toSpike");
-            console.log(`limitedToSpike: ${limitedToSpike}`);
-            console.log(`move.toSpike: ${move.toSpike}`);
-          }
           game.gameState.pieces[player][move.piece] = limitedToSpike;
 
           // Check if a piece has been captured
@@ -294,13 +268,10 @@ io.on('connection', (socket) => {
           let oppMessage;
 
           if (gameIsOver(game.gameState.pieces)) {
-            console.log("GAME OVER");
             playerMessage = "😀 You Win!!! 😀";
             oppMessage = "😢 You loose 😢";
-            console.log('SOCKET emit: game-state');
             socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
-            console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           } else if (movesLeft.length === 0) {
             // Swap turns
@@ -312,20 +283,16 @@ io.on('connection', (socket) => {
             // Send updated game to clients
             playerMessage = `${player === 0 ? game.name1 : game.name0}'s turn`;
             oppMessage = "Your turn";
-            console.log('SOCKET emit: game-state');
             socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
-            console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
 
           } else if (!playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
             // Send message to indicate forfeited moves
             playerMessage = "⛔ No moves can be made. Forfeit your turn. ⛔";
             oppMessage = "🎉 Opponent can't move. They forfeit their turn. 🎉";
-            console.log('SOCKET emit: game-state');
             socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
-            console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
             
             setTimeout(() => {
@@ -338,10 +305,8 @@ io.on('connection', (socket) => {
               // Send updated game to clients
               playerMessage = `${player === 0 ? game.name1 : game.name0}'s turn`;
               oppMessage = "Your turn";
-              console.log('SOCKET emit: game-state');
               socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
               const opponentId = player === 0 ? game.player1Id : game.player0Id;
-              console.log('SOCKET emit: game-state (other player)');
               io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
             }, 3000);
 
@@ -350,10 +315,8 @@ io.on('connection', (socket) => {
             // Send updated game to clients
             playerMessage = "Your turn";
             oppMessage = `${player === 0 ? game.name0 : game.name1}'s turn`;
-            console.log(`SOCKET emit: game-state`);
             socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
-            console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           }
         }
@@ -365,13 +328,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('roll-dice', () => {
-    console.log('SOCKET: roll-dice');
     try {
       const game = getGame(socket.id);
       const player = socket.id === game.player0Id ? 0 : 1;
       const playersTurn = player === 0 ? game.gameState.player0Turn : !game.gameState.player0Turn;
       if (game.gameState.gamePhase !== PLAY || !playersTurn || !game.gameState.needsToRoll) {
-        console.log('SOCKET emit: error');
         socket.emit('error', 'You can\'t roll right now');
       } else {
         const diceNumbers = getDiceNumbers();
@@ -385,10 +346,8 @@ io.on('connection', (socket) => {
         if (!playerCanMove(game.gameState.pieces, player, game.gameState.movesLeft)) {
           playerMessage = "⛔ No moves can be made. Forfeit your turn. ⛔";
           oppMessage = "🎉 Opponent can't move. They forfeit their turn. 🎉";
-          console.log('SOCKET emit: game-state');
           socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
           const opponentId = player === 0 ? game.player1Id : game.player0Id;
-          console.log('SOCKET emit: game-state (other player)');
           io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           
           setTimeout(() => {
@@ -401,20 +360,16 @@ io.on('connection', (socket) => {
             // Send updated game to clients
             playerMessage = `${player === 0 ? game.name1 : game.name0}'s turn`;
             oppMessage = "Your turn";
-            console.log('SOCKET emit: game-state');
             socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
             const opponentId = player === 0 ? game.player1Id : game.player0Id;
-            console.log('SOCKET emit: game-state (other player)');
             io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
           }, 3000);
         } else {
           // Send dice to client
           playerMessage = "Your turn";
           oppMessage = `${player === 0 ? game.name0 : game.name1}'s turn`;
-          console.log('SOCKET emit: game-state');
           socket.emit('game-state', gameStateToMessage(game, player, playerMessage));
           const opponentId = player === 0 ? game.player1Id : game.player0Id;
-          console.log('SOCKET emit: game-state (other player)');
           io.to(opponentId).emit('game-state', gameStateToMessage(game, 1 - player, oppMessage));
         }
       }
@@ -425,7 +380,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('play-again', () => {
-    console.log('SOCKET: play-again');
     // Initial dice rolls are pre-determined
     const initialDice0 = getDiceNumber();
     let initialDice1 = getDiceNumber();
@@ -453,11 +407,9 @@ io.on('connection', (socket) => {
       const game = getGame(socket.id);
       game.gameState = gameState;
 
-      console.log('SOCKET emit: play-again');
       socket.emit('play-again');
       const player = game.player0Id === socket.id ? 0 : 1;
       const opponentId = player === 0 ? game.player1Id : game.player0Id;
-      console.log('SOCKET emit: play-again');
       io.to(opponentId).emit('play-again');
     } catch (err) {
       console.log('Error starting new game');
@@ -467,11 +419,9 @@ io.on('connection', (socket) => {
 
   socket.on('chat', (message: string) => {
     try {
-      console.log('SOCKET: chat');
       const game = getGame(socket.id);
       const player = game.player0Id === socket.id ? 0 : 1;
       const opponentId = player === 0 ? game.player1Id : game.player0Id;
-      console.log('SOCKET emit: chat');
       io.to(opponentId).emit('chat', message);
     } catch (err) {
       console.log('Error receiving chat');
