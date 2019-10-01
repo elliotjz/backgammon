@@ -3,11 +3,22 @@ import styled from 'styled-components';
 import * as d3 from 'd3';
 
 import { StatsGameI } from '../helpers/interfaces';
+import Button from './Button';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  button {
+    margin-top: 1em;
+  }
+
+  .info {
+    margin-top: 1em;
+    text-align: center;
+    font-size: 0.9em;
+  }
 `;
 
 interface StateI {
@@ -37,8 +48,10 @@ class Analytics extends React.Component<PropsI, StateI> {
   parsedResults = (gameData: StatsGameI[]) => {
     const parsedData: number[] = [];
     gameData.forEach(game => {
-      game.gameState.pieces.forEach(playerPieces => {
-        const count = playerPieces.reduce((sum, spike) => sum + spike, 0);
+      game.gameState.pieces.forEach((playerPieces, i) => {
+        const count = i % 2 === 0 ?
+          playerPieces.reduce((sum, spike) => sum + 24 - spike, 0) :
+          playerPieces.reduce((sum, spike) => sum + spike + 1, 0);
         parsedData.push(count);
       })
     });
@@ -50,9 +63,11 @@ class Analytics extends React.Component<PropsI, StateI> {
     const barHeight = 50;
     const height = values.length * barHeight + 2 * padding;
     const width = 600;
-    const maxValue = values.reduce((max, val) => max = val > max ? val : max);
+    const maxValue = values.reduce((max, val) => max = val > max ? val : max, 0);
     const pxPerNum = (width - 2 * padding) / maxValue;
 
+    // Clear contents
+    document.getElementsByClassName('chart')[0].innerHTML = '';
     // SVG element
     const svg = d3.select('.chart')
       .append('svg')
@@ -117,8 +132,14 @@ class Analytics extends React.Component<PropsI, StateI> {
     return (
       <Container>
         <h1>Analytics</h1>
-        <p>Games in progress: {gamesInProgress}</p>
+        <p><b>Games in progress:</b> {gamesInProgress}</p>
         <div className="chart"></div>
+        <Button handleClick={this.getStats} text="Update Chart" disabled={false} />
+        <p className="info">
+          <b>Info:</b><br />
+          This chart keeps track of how far each player is from winning the game.<br />
+          As players move their pieces closer to the home zones, their bars will shrink towards zero.
+        </p>
       </Container>
     );
   }

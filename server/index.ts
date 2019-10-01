@@ -42,10 +42,8 @@ mongoose.connect(`mongodb://${user}:${pw}@ds113626.mlab.com:13626/backgammon`, (
   console.log('Connected to database');
 });
 
-// Volatile storage of games
-export const gamesBeingPlayed:GameI[] = [];
-// Fake game data
-/* [
+// Fake data for analytics
+const fakeData = [
   {"player0Id":"w74cQ-oLGsZ-n9vKAAAC","player1Id":"","name0":"","name1":"","uniqueCode0":"ngry8ffinr","uniqueCode1":"16zarp16fc",
     "gameState":{"gamePhase":0,"player0Turn":false,"needsToRoll":false,"initialDice0":4,"initialDice1":5,"dice":[4,5],"movesLeft":[4,5],
       "pieces":[[0,0,11,11,11,11,11,16,16,16,18,18,18,18,18],[5,5,5,5,5,7,7,7,12,12,12,12,12,23,23]]}},
@@ -56,7 +54,10 @@ export const gamesBeingPlayed:GameI[] = [];
     "gameState":{"gamePhase":2,"player0Turn":false,"needsToRoll":true,"initialDice0":-1,"initialDice1":-1,"dice":[-1,-1],"movesLeft":[-1,-1],
       "pieces":[[0,0,11,11,11,11,17,16,16,17,18,18,18,18,18],[5,5,5,5,5,7,7,7,12,12,12,12,12,23,23]]}}
 ];
- */
+
+// Volatile storage of games
+export const gamesBeingPlayed:GameI[] = fakeData;
+
 const getGameIndex = (id: string) => (
   gamesBeingPlayed.findIndex(g => (
     g.player0Id === id || g.player1Id === id
