@@ -1,5 +1,3 @@
-// TODO: Change @typescript dependencies to dev-dependencies
-
 import * as React from "react";
 import * as io from 'socket.io-client';
 import styled from "styled-components";
@@ -25,7 +23,6 @@ import {
 } from '../helpers/constants'
 import { ChatMessageI } from '../helpers/interfaces';
 import Chat from "./Chat";
-import Stats from "./Stats";
 
 const Container = styled.div`
   display: grid;
@@ -40,16 +37,8 @@ const Container = styled.div`
     margin: auto;
   }
 
-  .stats-container {
-    grid-column: 1 / 3;
-  }
-
   @media (max-width: 1000px) {
     grid-template-columns: 1fr;
-
-    .stats-container {
-      grid-column: 1 / 2;
-    }
   }
 `;
 
@@ -371,7 +360,7 @@ class Game extends React.Component<PropsI, StateI> {
           <GameStatus message={message} />
           {gamePhase === NOT_STARTED &&
             <>
-              {needsToSetName && <GameStatus message="Set your name in the chat window my typing /setname John" />}
+              {needsToSetName && <GameStatus message='Set your name in the chat window my typing "/setname" followed by your name' />}
               {opponentNeedsToSetName && <GameStatus message="Waiting for the opponent to set their name" />}
             </>
           }
@@ -395,9 +384,6 @@ class Game extends React.Component<PropsI, StateI> {
             myName={myName}
             opponentName={opponentName}
           />
-        </div>
-        <div className="stats-container">
-          <Stats />
         </div>
       </Container>
     );
