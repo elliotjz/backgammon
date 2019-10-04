@@ -5,7 +5,7 @@
 1. Clone this repo (or download and unzip)
 2. cd into the root directory
 3. Run `npm install`
-4. Run `npm build`. This will install the dependencies for the client, and build the client and server bundles.
+4. Run `npm run build`. This will install the dependencies for the client, and build the client and server bundles.
 5. Run `npm start`
 6. Navigate to `localhost:3000` in your browser
 
